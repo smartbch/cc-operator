@@ -64,8 +64,8 @@ func handleSig(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleRpcClientsInfo(w http.ResponseWriter, r *http.Request) {
-	enclaveNodes := getCurrEnclaveNodes()
-	bytes, err := json.Marshal(enclaveNodes)
+	nodes := getCurrNodes()
+	bytes, err := json.Marshal(nodes)
 	if err != nil {
 		w.Write([]byte(err.Error()))
 		return
@@ -73,8 +73,8 @@ func handleRpcClientsInfo(w http.ResponseWriter, r *http.Request) {
 	w.Write(bytes)
 }
 func handleNewRpcClientsInfo(w http.ResponseWriter, r *http.Request) {
-	enclaveNodes := getNewEnclaveNodes()
-	bytes, err := json.Marshal(enclaveNodes)
+	nodes := getNewNodes()
+	bytes, err := json.Marshal(nodes)
 	if err != nil {
 		w.Write([]byte(err.Error()))
 		return

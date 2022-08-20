@@ -7,6 +7,7 @@ require (
 	github.com/edgelesssys/ego v0.4.1
 	github.com/gcash/bchd v0.19.0
 	github.com/stretchr/testify v1.7.0
+	github.com/holiman/uint256 v1.2.0
 )
 
 require (

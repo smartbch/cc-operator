@@ -4,56 +4,52 @@ import (
 	"fmt"
 )
 
-const (
-	reqOperatorSigHashes = `{"jsonrpc": "2.0", "method": "sbch_operatorSigHashes", "params": [], "id":1}`
-)
-
-func InitRpcClients(bootstrapRpcUrl string, minEnclaveNodeCount int, minSameRespCount int) (
-	*RpcClientsInfo, error) {
+func InitRpcClients(bootstrapRpcUrl string,
+	minNodeCount int, minSameRespCount int) (*RpcClientsInfo, error) {
 
 	bootstrapClient := wrapSimpleRpcClient(bootstrapRpcUrl)
-	enclaveNodes, err := bootstrapClient.GetEnclaveNodes()
+	sbchdNodes, err := bootstrapClient.GetSbchdNodes()
 	if err != nil {
 		return nil, err
 	}
 
-	attestedClients, attestedEnclaveNodes, err := AttestEnclavesAndCreateRpcClient(enclaveNodes, minEnclaveNodeCount, minSameRespCount)
+	rpcClients, okNodes, err := CheckNodesAndCreateRpcClient(sbchdNodes, minNodeCount, minSameRespCount)
 	return &RpcClientsInfo{
-		BootstrapRpcClient:   bootstrapClient,
-		AttestedRpcClients:   attestedClients,
-		EnclaveNodes:         enclaveNodes,
-		AttestedEnclaveNodes: attestedEnclaveNodes,
+		BootstrapRpcClient: bootstrapClient,
+		RpcClients:         rpcClients,
+		AllNodes:           sbchdNodes,
+		UsedNodes:          okNodes,
 	}, nil
 }
 
-func AttestEnclavesAndCreateRpcClient(enclaveNodes []EnclaveNodeInfo,
-	minEnclaveNodeCount int, minSameRespCount int) (RpcClient, []EnclaveNodeInfo, error) {
+func CheckNodesAndCreateRpcClient(sbchdNodes []NodeInfo,
+	minNodeCount int, minSameRespCount int) (RpcClient, []NodeInfo, error) {
 
-	if len(enclaveNodes) < minEnclaveNodeCount {
-		return nil, nil, fmt.Errorf("not enough enclave nodes: %d < %d",
-			len(enclaveNodes), minEnclaveNodeCount)
+	if len(sbchdNodes) < minNodeCount {
+		return nil, nil, fmt.Errorf("not enough sbchd nodes: %d < %d",
+			len(sbchdNodes), minNodeCount)
 	}
 
-	attestedEnclaveNodes := make([]EnclaveNodeInfo, 0, len(enclaveNodes))
-	attestedRpcClients := make([]BasicRpcClient, 0, len(enclaveNodes))
-	for _, info := range enclaveNodes {
-		client := newEnclaveRpcClient(info)
-		if err := client.remoteAttest(); err != nil {
-			fmt.Println("failed to attest enclave node:", client.RpcURL(), "error:", err.Error())
+	okSbchdNodes := make([]NodeInfo, 0, len(sbchdNodes))
+	rpcClients := make([]BasicRpcClient, 0, len(sbchdNodes))
+	for _, node := range sbchdNodes {
+		client, err := NewRpcClientOfNode(node)
+		if err != nil {
+			fmt.Println("failed to create rpc client, node:", node.ID, "error:", err.Error())
 		} else {
-			attestedEnclaveNodes = append(attestedEnclaveNodes, info)
-			attestedRpcClients = append(attestedRpcClients, client)
+			okSbchdNodes = append(okSbchdNodes, node)
+			rpcClients = append(rpcClients, client)
 		}
 	}
-	if len(attestedRpcClients) < minEnclaveNodeCount {
-		return nil, nil, fmt.Errorf("not enough attested enclave nodes: %d < %d",
-			len(enclaveNodes), minEnclaveNodeCount)
+	if len(rpcClients) < minNodeCount {
+		return nil, nil, fmt.Errorf("not enough checked nodes: %d < %d",
+			len(sbchdNodes), minNodeCount)
 	}
-	if minSameRespCount <= len(attestedRpcClients)/2 {
+	if minSameRespCount <= len(rpcClients)/2 {
 		return nil, nil, fmt.Errorf("minSameRespCount is not greater than half of clients: %d <= %d/2",
-			minSameRespCount, len(attestedRpcClients))
+			minSameRespCount, len(rpcClients))
 	}
 
-	cli := wrapAggregatedRpcClient(attestedRpcClients, minSameRespCount)
-	return cli, attestedEnclaveNodes, nil
+	cli := wrapAggregatedRpcClient(rpcClients, minSameRespCount)
+	return cli, okSbchdNodes, nil
 }

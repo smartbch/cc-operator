@@ -13,13 +13,13 @@ import (
 var rpcClientsInfoLock sync.RWMutex
 var rpcClientsInfo *sbch.RpcClientsInfo
 var newRpcClientsInfo *sbch.RpcClientsInfo
-var enclaveNodesChangedTime time.Time
+var nodesChangedTime time.Time
 
 var sigCache = gcache.New(sigCacheMaxCount).Expiration(sigCacheExpiration).Simple().Build()
 
 func initRpcClient() {
 	var err error
-	rpcClientsInfo, err = sbch.InitRpcClients(bootstrapRpcURL, minEnclaveNodeCount, minSameRespCount)
+	rpcClientsInfo, err = sbch.InitRpcClients(bootstrapRpcURL, minNodeCount, minSameRespCount)
 	if err != nil {
 		panic(err)
 	}
@@ -30,10 +30,10 @@ func getAndSignSigHashes() {
 		time.Sleep(getSigHashesInterval)
 
 		rpcClientsInfoLock.RLock()
-		attestedRpcClients := rpcClientsInfo.AttestedRpcClients
+		rpcClients := rpcClientsInfo.RpcClients
 		rpcClientsInfoLock.RUnlock()
 
-		sigHashes, err := attestedRpcClients.GetOperatorSigHashes()
+		sigHashes, err := rpcClients.GetOperatorSigHashes()
 		if err != nil {
 			fmt.Println("can not get sig hashes:", err.Error())
 			continue
@@ -58,39 +58,39 @@ func getAndSignSigHashes() {
 	}
 }
 
-func watchEnclaveNodes() {
+func watchSbchdNodes() {
 	// TODO: change to time.Ticker?
 	for {
-		time.Sleep(checkEnclaveNodesInterval)
+		time.Sleep(checkNodesInterval)
 
-		latestEnclaveNodes, err := rpcClientsInfo.BootstrapRpcClient.GetEnclaveNodes()
+		latestNodes, err := rpcClientsInfo.BootstrapRpcClient.GetSbchdNodes()
 		if err != nil {
-			fmt.Println("failed to get enclave nodes:", err.Error())
+			fmt.Println("failed to get sbchd nodes:", err.Error())
 			continue
 		}
 
-		if enclaveNodesChanged(latestEnclaveNodes) {
+		if nodesChanged(latestNodes) {
 			newRpcClientsInfo = nil
-			attestedRpcClients, attestedEnclaveNodes, err := sbch.AttestEnclavesAndCreateRpcClient(
-				latestEnclaveNodes, minEnclaveNodeCount, minSameRespCount)
+			rpcClients, okNodes, err := sbch.CheckNodesAndCreateRpcClient(
+				latestNodes, minNodeCount, minSameRespCount)
 			if err != nil {
-				fmt.Println("failed to attest enclave nodes:", err.Error())
+				fmt.Println("failed to check sbchd nodes:", err.Error())
 				continue
 			}
 
-			enclaveNodesChangedTime = time.Now()
+			nodesChangedTime = time.Now()
 			newRpcClientsInfo = &sbch.RpcClientsInfo{
-				BootstrapRpcClient:   rpcClientsInfo.BootstrapRpcClient,
-				AttestedRpcClients:   attestedRpcClients,
-				EnclaveNodes:         latestEnclaveNodes,
-				AttestedEnclaveNodes: attestedEnclaveNodes,
+				BootstrapRpcClient: rpcClientsInfo.BootstrapRpcClient,
+				RpcClients:         rpcClients,
+				AllNodes:           latestNodes,
+				UsedNodes:          okNodes,
 			}
 
 			continue
 		}
 
 		if newRpcClientsInfo != nil {
-			if time.Now().Sub(enclaveNodesChangedTime) > newEnclaveNodesDelayTime {
+			if time.Now().Sub(nodesChangedTime) > newNodesDelayTime {
 				rpcClientsInfoLock.Lock()
 				rpcClientsInfo = newRpcClientsInfo
 				newRpcClientsInfo = nil
@@ -100,16 +100,16 @@ func watchEnclaveNodes() {
 	}
 }
 
-func enclaveNodesChanged(latestEnclaveNodes []sbch.EnclaveNodeInfo) bool {
-	// first, compare with rpcClientInfo.EnclaveNodes
+func nodesChanged(latestNodes []sbch.NodeInfo) bool {
+	// second, compare with newRpcClientInfo.AllNodes
 	if newRpcClientsInfo != nil {
-		return enclaveNodesEqual(newRpcClientsInfo.EnclaveNodes, latestEnclaveNodes)
+		return nodesEqual(newRpcClientsInfo.AllNodes, latestNodes)
 	}
-	// second, compare with newRpcClientInfo.EnclaveNodes
-	return enclaveNodesEqual(rpcClientsInfo.EnclaveNodes, latestEnclaveNodes)
+	// first, compare with rpcClientInfo.AllNodes
+	return nodesEqual(rpcClientsInfo.AllNodes, latestNodes)
 }
 
-func enclaveNodesEqual(s1, s2 []sbch.EnclaveNodeInfo) bool {
+func nodesEqual(s1, s2 []sbch.NodeInfo) bool {
 	return reflect.DeepEqual(s1, s2)
 }
 
@@ -125,16 +125,16 @@ func getSig(sigHashHex string) []byte {
 	return nil
 }
 
-func getCurrEnclaveNodes() []sbch.EnclaveNodeInfo {
+func getCurrNodes() []sbch.NodeInfo {
 	rpcClientsInfoLock.RLock()
 	defer rpcClientsInfoLock.RUnlock()
-	return rpcClientsInfo.EnclaveNodes
+	return rpcClientsInfo.AllNodes
 }
-func getNewEnclaveNodes() []sbch.EnclaveNodeInfo {
+func getNewNodes() []sbch.NodeInfo {
 	rpcClientsInfoLock.RLock()
 	defer rpcClientsInfoLock.RUnlock()
 	if newRpcClientsInfo == nil {
 		return nil
 	}
-	return newRpcClientsInfo.EnclaveNodes
+	return newRpcClientsInfo.AllNodes
 }

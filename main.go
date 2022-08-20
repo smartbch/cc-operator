@@ -11,7 +11,7 @@ func main() {
 	loadOrGenKey()
 	initRpcClient()
 	go getAndSignSigHashes()
-	go watchEnclaveNodes()
+	go watchSbchdNodes()
 	go startHttpServer(listenAddr)
 	select {}
 }

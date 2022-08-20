@@ -7,20 +7,21 @@ type BasicRpcClient interface {
 
 type RpcClient interface {
 	//GetBlockNumber() (uint64, error)
-	GetEnclaveNodes() ([]EnclaveNodeInfo, error)
+	GetSbchdNodes() ([]NodeInfo, error)
 	GetOperatorSigHashes() ([]string, error)
 }
 
-type EnclaveNodeInfo struct {
-	ServerAddr      string // like localhost:8080
-	SignerID        []byte
-	ProductID       uint16
-	SecurityVersion uint
+type NodeInfo struct {
+	ID       uint64
+	CertHash [32]byte
+	CertUrl  string
+	RpcUrl   string
+	Intro    string
 }
 
 type RpcClientsInfo struct {
-	BootstrapRpcClient   RpcClient
-	AttestedRpcClients   RpcClient
-	EnclaveNodes         []EnclaveNodeInfo
-	AttestedEnclaveNodes []EnclaveNodeInfo
+	BootstrapRpcClient RpcClient
+	RpcClients         RpcClient
+	AllNodes           []NodeInfo
+	UsedNodes          []NodeInfo
 }
