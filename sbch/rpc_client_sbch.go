@@ -22,20 +22,21 @@ const (
 	reqCallTmpl          = `{"jsonrpc": "2.0", "method": "eth_call", "params": [{"to": "%s", "data": "%s"}, "latest"], "id":1}`
 )
 
-var _ RpcClient = (*rpcClientWrapper)(nil)
+var _ RpcClient = (*sbchRpcClient)(nil)
 
-type rpcClientWrapper struct {
-	client BasicRpcClient
+// smartBCH JSON-RPC client
+type sbchRpcClient struct {
+	basicClient BasicRpcClient
 }
 
-func wrapSimpleRpcClient(url string) RpcClient {
-	return &rpcClientWrapper{
-		client: NewSimpleRpcClient(url),
+func NewSimpleRpcClient(url string) RpcClient {
+	return &sbchRpcClient{
+		basicClient: newBasicRpcClient(url),
 	}
 }
 
-func (wrapper rpcClientWrapper) GetOperatorSigHashes() ([]string, error) {
-	resp, err := wrapper.client.SendPost(reqOperatorSigHashes)
+func (client sbchRpcClient) GetOperatorSigHashes() ([]string, error) {
+	resp, err := client.basicClient.SendPost(reqOperatorSigHashes)
 	if err != nil {
 		return nil, err
 	}
@@ -49,15 +50,15 @@ func (wrapper rpcClientWrapper) GetOperatorSigHashes() ([]string, error) {
 	return sigHashes, nil
 }
 
-func (wrapper rpcClientWrapper) GetSbchdNodes() ([]NodeInfo, error) {
-	nodeCount, err := wrapper.getNodeCount()
+func (client sbchRpcClient) GetSbchdNodes() ([]NodeInfo, error) {
+	nodeCount, err := client.getNodeCount()
 	if err != nil {
 		return nil, err
 	}
 
 	nodes := make([]NodeInfo, nodeCount)
 	for i := uint64(0); i < nodeCount; i++ {
-		nodes[i], err = wrapper.getNodeByIdx(i)
+		nodes[i], err = client.getNodeByIdx(i)
 		if err != nil {
 			return nil, err
 		}
@@ -65,22 +66,22 @@ func (wrapper rpcClientWrapper) GetSbchdNodes() ([]NodeInfo, error) {
 
 	return nodes, nil
 }
-func (wrapper rpcClientWrapper) getNodeCount() (uint64, error) {
+func (client sbchRpcClient) getNodeCount() (uint64, error) {
 	data := getNodeCountSel
 	reqGetNodeCount := fmt.Sprintf(reqCallTmpl, nodesGovContractAddr, data)
-	resp, err := wrapper.client.SendPost(reqGetNodeCount)
+	resp, err := client.basicClient.SendPost(reqGetNodeCount)
 	if err != nil {
 		return 0, err
 	}
 
 	return uint256.NewInt(0).SetBytes(resp).Uint64(), nil
 }
-func (wrapper rpcClientWrapper) getNodeByIdx(n uint64) (node NodeInfo, err error) {
+func (client sbchRpcClient) getNodeByIdx(n uint64) (node NodeInfo, err error) {
 	data := getNodeByIdxSel + hex.EncodeToString(uint256.NewInt(n).PaddedBytes(32))
 	reqGetNodeByIdx := fmt.Sprintf(reqCallTmpl, nodesGovContractAddr, data)
 
 	var resp []byte
-	resp, err = wrapper.client.SendPost(reqGetNodeByIdx)
+	resp, err = client.basicClient.SendPost(reqGetNodeByIdx)
 	if err != nil {
 		return
 	}

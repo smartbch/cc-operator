@@ -12,6 +12,7 @@ import (
 
 var _ BasicRpcClient = (*basicRpcClient)(nil)
 
+// basic JSON-RPC basicClient
 type basicRpcClient struct {
 	url        string
 	httpClient *http.Client
@@ -47,14 +48,14 @@ func (client *basicRpcClient) SendPost(reqStr string) ([]byte, error) {
 	return respData, nil
 }
 
-func NewSimpleRpcClient(url string) *basicRpcClient {
+func newBasicRpcClient(url string) *basicRpcClient {
 	return &basicRpcClient{
 		url:        url,
 		httpClient: http.DefaultClient,
 	}
 }
 
-func NewRpcClientOfNode(node NodeInfo) (*basicRpcClient, error) {
+func newBasicRpcClientOfNode(node NodeInfo) (*basicRpcClient, error) {
 	certData, err := getCertData(node.CertUrl)
 	if err != nil {
 		return nil, err
@@ -65,10 +66,10 @@ func NewRpcClientOfNode(node NodeInfo) (*basicRpcClient, error) {
 		return nil, errors.New("cert data and hash not match")
 	}
 
-	return NewRpcClientWithCertData(node.RpcUrl, certData)
+	return newBasicRpcClientWithCertData(node.RpcUrl, certData)
 }
 
-func NewRpcClientWithCertData(rpcUrl string, caCert []byte) (*basicRpcClient, error) {
+func newBasicRpcClientWithCertData(rpcUrl string, caCert []byte) (*basicRpcClient, error) {
 	caCertPool := x509.NewCertPool()
 	if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
 		return nil, errors.New("failed to parse cert data")

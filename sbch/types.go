@@ -21,7 +21,7 @@ type NodeInfo struct {
 
 type RpcClientsInfo struct {
 	BootstrapRpcClient RpcClient
-	RpcClients         RpcClient
+	ClusterRpcClient   RpcClient
 	AllNodes           []NodeInfo
-	UsedNodes          []NodeInfo
+	ValidNodes         []NodeInfo // used by clusterRpcClient
 }

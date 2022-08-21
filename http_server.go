@@ -25,8 +25,8 @@ func initHttpHandlers() {
 	http.HandleFunc("/report", handleReport)
 	http.HandleFunc("/token", handleJwtToken)
 	http.HandleFunc("/sig", handleSig)
-	http.HandleFunc("/rpcClients", handleRpcClientsInfo)
-	http.HandleFunc("/newRpcClients", handleNewRpcClientsInfo)
+	http.HandleFunc("/nodes", handleCurrNodes)
+	http.HandleFunc("/newNodes", handleNewNodes)
 }
 
 func handlePubKey(w http.ResponseWriter, r *http.Request) {
@@ -63,7 +63,7 @@ func handleSig(w http.ResponseWriter, r *http.Request) {
 	w.Write(sig)
 }
 
-func handleRpcClientsInfo(w http.ResponseWriter, r *http.Request) {
+func handleCurrNodes(w http.ResponseWriter, r *http.Request) {
 	nodes := getCurrNodes()
 	bytes, err := json.Marshal(nodes)
 	if err != nil {
@@ -72,7 +72,7 @@ func handleRpcClientsInfo(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write(bytes)
 }
-func handleNewRpcClientsInfo(w http.ResponseWriter, r *http.Request) {
+func handleNewNodes(w http.ResponseWriter, r *http.Request) {
 	nodes := getNewNodes()
 	bytes, err := json.Marshal(nodes)
 	if err != nil {

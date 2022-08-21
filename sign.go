@@ -30,7 +30,7 @@ func getAndSignSigHashes() {
 		time.Sleep(getSigHashesInterval)
 
 		rpcClientsInfoLock.RLock()
-		rpcClients := rpcClientsInfo.RpcClients
+		rpcClients := rpcClientsInfo.ClusterRpcClient
 		rpcClientsInfoLock.RUnlock()
 
 		sigHashes, err := rpcClients.GetOperatorSigHashes()
@@ -71,7 +71,7 @@ func watchSbchdNodes() {
 
 		if nodesChanged(latestNodes) {
 			newRpcClientsInfo = nil
-			rpcClients, okNodes, err := sbch.CheckNodesAndCreateRpcClient(
+			clusterClient, validNodes, err := sbch.NewClusterRpcClientOfNodes(
 				latestNodes, minNodeCount, minSameRespCount)
 			if err != nil {
 				fmt.Println("failed to check sbchd nodes:", err.Error())
@@ -81,9 +81,9 @@ func watchSbchdNodes() {
 			nodesChangedTime = time.Now()
 			newRpcClientsInfo = &sbch.RpcClientsInfo{
 				BootstrapRpcClient: rpcClientsInfo.BootstrapRpcClient,
-				RpcClients:         rpcClients,
+				ClusterRpcClient:   clusterClient,
 				AllNodes:           latestNodes,
-				UsedNodes:          okNodes,
+				ValidNodes:         validNodes,
 			}
 
 			continue
