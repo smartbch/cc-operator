@@ -18,8 +18,8 @@ const (
 )
 
 const (
-	reqOperatorSigHashes = `{"jsonrpc": "2.0", "method": "sbch_operatorSigHashes", "params": [], "id":1}`
-	reqCallTmpl          = `{"jsonrpc": "2.0", "method": "eth_call", "params": [{"to": "%s", "data": "%s"}, "latest"], "id":1}`
+	reqRedeemingUTXOs = `{"jsonrpc": "2.0", "method": "sbch_getRedeemingUtxosForOperators", "params": [], "id":1}`
+	reqCallTmpl       = `{"jsonrpc": "2.0", "method": "eth_call", "params": [{"to": "%s", "data": "%s"}, "latest"], "id":1}`
 )
 
 var _ RpcClient = (*sbchRpcClient)(nil)
@@ -36,15 +36,20 @@ func NewSimpleRpcClient(url string) RpcClient {
 }
 
 func (client sbchRpcClient) GetOperatorSigHashes() ([]string, error) {
-	resp, err := client.basicClient.SendPost(reqOperatorSigHashes)
+	resp, err := client.basicClient.SendPost(reqRedeemingUTXOs)
 	if err != nil {
 		return nil, err
 	}
 
-	var sigHashes []string
-	err = json.Unmarshal(resp, &sigHashes)
+	var utxoInfos []UtxoInfo
+	err = json.Unmarshal(resp, &utxoInfos)
 	if err != nil {
 		return nil, err
+	}
+
+	sigHashes := make([]string, len(utxoInfos))
+	for i, utxoInfo := range utxoInfos {
+		sigHashes[i] = utxoInfo.TxSigHash.String()
 	}
 
 	return sigHashes, nil
