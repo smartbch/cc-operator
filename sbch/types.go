@@ -13,7 +13,8 @@ type BasicRpcClient interface {
 type RpcClient interface {
 	//GetBlockNumber() (uint64, error)
 	GetSbchdNodes() ([]NodeInfo, error)
-	GetOperatorSigHashes() ([]string, error)
+	GetRedeemingUtxoSigHashes() ([]string, error)
+	GetToBeConvertedUtxoSigHashes() ([]string, error)
 }
 
 type NodeInfo struct {

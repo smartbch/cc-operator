@@ -19,7 +19,7 @@ var sigCache = gcache.New(sigCacheMaxCount).Expiration(sigCacheExpiration).Simpl
 
 func initRpcClient() {
 	var err error
-	rpcClientsInfo, err = sbch.InitRpcClients(bootstrapRpcURL, minNodeCount, minSameRespCount)
+	rpcClientsInfo, err = sbch.InitRpcClients(bootstrapRpcURL, minNodeCount)
 	if err != nil {
 		panic(err)
 	}
@@ -33,13 +33,19 @@ func getAndSignSigHashes() {
 		rpcClients := rpcClientsInfo.ClusterRpcClient
 		rpcClientsInfoLock.RUnlock()
 
-		sigHashes, err := rpcClients.GetOperatorSigHashes()
+		redeemingUtxoSigHashes, err := rpcClients.GetRedeemingUtxoSigHashes()
 		if err != nil {
 			fmt.Println("can not get sig hashes:", err.Error())
 			continue
 		}
+		toBeConvertedUtxoSigHashes, err := rpcClients.GetToBeConvertedUtxoSigHashes()
+		if err != nil {
+			fmt.Println("can not get sig hashes:", err.Error())
+			continue
+		}
+		allSigHashes := append(redeemingUtxoSigHashes, toBeConvertedUtxoSigHashes...)
 
-		for _, sigHashHex := range sigHashes {
+		for _, sigHashHex := range allSigHashes {
 			if sigCache.Has(sigHashHex) {
 				continue
 			}
@@ -72,7 +78,7 @@ func watchSbchdNodes() {
 		if nodesChanged(latestNodes) {
 			newRpcClientsInfo = nil
 			clusterClient, validNodes, err := sbch.NewClusterRpcClientOfNodes(
-				latestNodes, minNodeCount, minSameRespCount)
+				latestNodes, minNodeCount)
 			if err != nil {
 				fmt.Println("failed to check sbchd nodes:", err.Error())
 				continue

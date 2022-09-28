@@ -8,6 +8,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
+)
+
+const (
+	rpcTimeout = 5 * time.Second
 )
 
 var _ BasicRpcClient = (*basicRpcClient)(nil)
@@ -50,8 +55,10 @@ func (client *basicRpcClient) SendPost(reqStr string) ([]byte, error) {
 
 func newBasicRpcClient(url string) *basicRpcClient {
 	return &basicRpcClient{
-		url:        url,
-		httpClient: http.DefaultClient,
+		url: url,
+		httpClient: &http.Client{
+			Timeout: rpcTimeout,
+		},
 	}
 }
 
@@ -75,16 +82,16 @@ func newBasicRpcClientWithCertData(rpcUrl string, caCert []byte) (*basicRpcClien
 		return nil, errors.New("failed to parse cert data")
 	}
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				RootCAs: caCertPool,
+	return &basicRpcClient{
+		url: rpcUrl,
+		httpClient: &http.Client{
+			Timeout: rpcTimeout,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs: caCertPool,
+				},
 			},
 		},
-	}
-	return &basicRpcClient{
-		url:        rpcUrl,
-		httpClient: client,
 	}, nil
 }
 

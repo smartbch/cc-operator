@@ -18,8 +18,9 @@ const (
 )
 
 const (
-	reqRedeemingUTXOs = `{"jsonrpc": "2.0", "method": "sbch_getRedeemingUtxosForOperators", "params": [], "id":1}`
-	reqCallTmpl       = `{"jsonrpc": "2.0", "method": "eth_call", "params": [{"to": "%s", "data": "%s"}, "latest"], "id":1}`
+	reqCallTmpl           = `{"jsonrpc": "2.0", "method": "eth_call", "params": [{"to": "%s", "data": "%s"}, "latest"], "id":1}`
+	reqRedeemingUTXOs     = `{"jsonrpc": "2.0", "method": "sbch_getRedeemingUtxosForOperators", "params": [], "id":1}`
+	reqToBeConvertedUTXOs = `{"jsonrpc": "2.0", "method": "sbch_getToBeConvertedUtxosForOperators", "params": [], "id":1}`
 )
 
 var _ RpcClient = (*sbchRpcClient)(nil)
@@ -35,8 +36,14 @@ func NewSimpleRpcClient(url string) RpcClient {
 	}
 }
 
-func (client sbchRpcClient) GetOperatorSigHashes() ([]string, error) {
-	resp, err := client.basicClient.SendPost(reqRedeemingUTXOs)
+func (client sbchRpcClient) GetRedeemingUtxoSigHashes() ([]string, error) {
+	return client.getSigHashes(reqRedeemingUTXOs)
+}
+func (client sbchRpcClient) GetToBeConvertedUtxoSigHashes() ([]string, error) {
+	return client.getSigHashes(reqToBeConvertedUTXOs)
+}
+func (client sbchRpcClient) getSigHashes(reqStr string) ([]string, error) {
+	resp, err := client.basicClient.SendPost(reqStr)
 	if err != nil {
 		return nil, err
 	}

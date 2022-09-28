@@ -3,8 +3,7 @@ package main
 import "time"
 
 const (
-	minNodeCount     = 5
-	minSameRespCount = 3
+	minNodeCount = 5
 
 	sigCacheMaxCount   = 10000
 	sigCacheExpiration = 2 * time.Hour
