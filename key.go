@@ -8,6 +8,7 @@ import (
 
 	"github.com/edgelesssys/ego/ecrypto"
 	"github.com/gcash/bchd/bchec"
+	"github.com/smartbch/ccoperator/utils"
 )
 
 const keyFile = "/data/key.txt"
@@ -38,7 +39,7 @@ func genPrivKey() {
 }
 
 func newPrivKey() {
-	key, err := ecdsa.GenerateKey(bchec.S256(), &RandReader{})
+	key, err := ecdsa.GenerateKey(bchec.S256(), &utils.RandReader{})
 	if err != nil {
 		panic(err)
 	}

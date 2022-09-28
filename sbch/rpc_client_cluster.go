@@ -83,6 +83,7 @@ func NewClusterRpcClientOfNodes(sbchdNodes []NodeInfo,
 
 func newClusterRpcClient(clients []BasicRpcClient) RpcClient {
 	return &sbchRpcClient{
+		nodesGovAddr: nodesGovContractAddr,
 		basicClient: &clusterRpcClient{
 			clients: clients,
 		},

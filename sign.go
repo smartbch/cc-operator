@@ -69,7 +69,7 @@ func watchSbchdNodes() {
 	for {
 		time.Sleep(checkNodesInterval)
 
-		latestNodes, err := rpcClientsInfo.BootstrapRpcClient.GetSbchdNodes()
+		latestNodes, err := rpcClientsInfo.ClusterRpcClient.GetSbchdNodes()
 		if err != nil {
 			fmt.Println("failed to get sbchd nodes:", err.Error())
 			continue
