@@ -1,2 +1,4 @@
 # cc-operator
-SHA-Gate2 operator
+
+smartBCH SHA-Gate2 operator
+

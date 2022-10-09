@@ -19,8 +19,8 @@ func loadOrGenKey() {
 	if err != nil {
 		fmt.Printf("read file failed, %s\n", err.Error())
 		if os.IsNotExist(err) {
-			// maybe first run this enclave app
-			genPrivKey()
+			// maybe it's first time to run this enclave app
+			genAndSealPrivKey()
 		}
 		return
 	}
@@ -31,12 +31,14 @@ func loadOrGenKey() {
 	fmt.Printf("pubkey: %s\n", hex.EncodeToString(pubKeyBytes))
 }
 
-func genPrivKey() {
-	newPrivKey()
-	sealPrivKeyToFile()
+func genAndSealPrivKey() {
+	genNewPrivKey()
+	if !integrationMode {
+		sealPrivKeyToFile()
+	}
 }
 
-func newPrivKey() {
+func genNewPrivKey() {
 	key, err := ecdsa.GenerateKey(bchec.S256(), &utils.RandReader{})
 	if err != nil {
 		panic(err)
@@ -67,20 +69,6 @@ func unsealPrivKeyFromFile(fileData []byte) {
 	fmt.Println("loaded key from file")
 }
 
-func signSigHashSchnorr(sigHashHex string) ([]byte, error) {
-	sigHashBytes, err := hex.DecodeString(sigHashHex)
-	if err != nil {
-		return nil, err
-	}
-
-	sig, err := privKey.SignSchnorr(sigHashBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return sig.Serialize(), nil
-}
-
 func signSigHashECDSA(sigHashHex string) ([]byte, error) {
 	sigHashBytes, err := hex.DecodeString(sigHashHex)
 	if err != nil {
@@ -88,6 +76,20 @@ func signSigHashECDSA(sigHashHex string) ([]byte, error) {
 	}
 
 	sig, err := privKey.SignECDSA(sigHashBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return sig.Serialize(), nil
+}
+
+func signSigHashSchnorr(sigHashHex string) ([]byte, error) {
+	sigHashBytes, err := hex.DecodeString(sigHashHex)
+	if err != nil {
+		return nil, err
+	}
+
+	sig, err := privKey.SignSchnorr(sigHashBytes)
 	if err != nil {
 		return nil, err
 	}

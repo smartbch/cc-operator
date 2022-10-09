@@ -3,6 +3,8 @@ package operator
 import "time"
 
 const (
+	integrationMode = true // set this to false in production mode
+
 	keyFile = "/data/key.txt"
 
 	minNodeCount = 5
