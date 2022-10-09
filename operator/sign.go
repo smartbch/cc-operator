@@ -1,4 +1,4 @@
-package main
+package operator
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ var nodesChangedTime time.Time
 
 var sigCache = gcache.New(sigCacheMaxCount).Expiration(sigCacheExpiration).Simple().Build()
 
-func initRpcClient() {
+func initRpcClient(bootstrapRpcURL string) {
 	var err error
 	rpcClientsInfo, err = sbch.InitRpcClients(bootstrapRpcURL, minNodeCount)
 	if err != nil {

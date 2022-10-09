@@ -1,6 +1,10 @@
 package main
 
-import "flag"
+import (
+	"flag"
+
+	"github.com/smartbch/ccoperator/operator"
+)
 
 var (
 	listenAddr      = "0.0.0.0:8080"
@@ -12,10 +16,5 @@ func main() {
 	flag.StringVar(&bootstrapRpcURL, "bootstrapRpcURL", "http://localhost:8545", "bootstrap smartBCH RPC URL")
 	flag.Parse()
 
-	loadOrGenKey()
-	initRpcClient()
-	go getAndSignSigHashes()
-	go watchSbchdNodes()
-	go startHttpServer(listenAddr)
-	select {}
+	operator.Start(listenAddr, bootstrapRpcURL)
 }

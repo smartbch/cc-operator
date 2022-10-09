@@ -1,8 +1,10 @@
-package main
+package operator
 
 import "time"
 
 const (
+	keyFile = "/data/key.txt"
+
 	minNodeCount = 5
 
 	sigCacheMaxCount   = 10000

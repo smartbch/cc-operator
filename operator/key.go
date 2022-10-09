@@ -1,4 +1,4 @@
-package main
+package operator
 
 import (
 	"crypto/ecdsa"
@@ -10,8 +10,6 @@ import (
 	"github.com/gcash/bchd/bchec"
 	"github.com/smartbch/ccoperator/utils"
 )
-
-const keyFile = "/data/key.txt"
 
 var privKey *bchec.PrivateKey
 var pubKeyBytes []byte // compressed
