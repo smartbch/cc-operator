@@ -44,7 +44,7 @@ func (cluster *clusterRpcClient) SendPost(reqStr string) ([]byte, error) {
 	// all responses should be same
 	resp0 := resps[0]
 	for idx, resp := range resps {
-		if idx > 0 && bytes.Equal(resp0, resp) {
+		if idx > 0 && !bytes.Equal(resp0, resp) {
 			return nil, fmt.Errorf("response not match between: %s, %s",
 				cluster.clients[0].RpcURL(), cluster.clients[idx].RpcURL())
 		}
