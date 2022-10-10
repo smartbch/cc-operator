@@ -15,7 +15,7 @@ var (
 )
 
 func main() {
-	flag.StringVar(&listenAddr, "listenAddr", "0.0.0.0:8080", "listen addr, ip:port")
+	flag.StringVar(&listenAddr, "listenAddr", "0.0.0.0:8801", "listen addr, ip:port")
 	flag.StringVar(&bootstrapRpcURL, "bootstrapRpcURL", "http://localhost:8545", "bootstrap smartBCH RPC URL")
 	flag.StringVar(&nodesGovAddr, "nodesGovAddr", "0x0000000000000000000000000000000000001234", "address of NodesGov contract")
 	flag.Parse()

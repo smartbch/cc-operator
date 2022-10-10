@@ -19,7 +19,7 @@ type RpcClient interface {
 
 type NodeInfo struct {
 	ID       uint64
-	CertHash [32]byte
+	CertHash gethcmn.Hash
 	CertUrl  string
 	RpcUrl   string
 	Intro    string

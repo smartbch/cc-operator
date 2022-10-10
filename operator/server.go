@@ -31,10 +31,14 @@ func initHttpHandlers() {
 
 func handlePubKey(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(hex.EncodeToString(pubKeyBytes)))
-	return
 }
 
 func handleReport(w http.ResponseWriter, r *http.Request) {
+	if integrationTestMode {
+		w.Write([]byte("integrationTestMode!"))
+		return
+	}
+
 	hash := sha256.Sum256(pubKeyBytes)
 	report, err := enclave.GetRemoteReport(hash[:])
 	if err != nil {
@@ -45,6 +49,11 @@ func handleReport(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleJwtToken(w http.ResponseWriter, r *http.Request) {
+	if integrationTestMode {
+		w.Write([]byte("integrationTestMode!"))
+		return
+	}
+
 	token, err := enclave.CreateAzureAttestationToken(pubKeyBytes, attestationProviderURL)
 	if err != nil {
 		w.Write([]byte(err.Error()))
@@ -60,7 +69,7 @@ func handleSig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sig := getSig(vals[0])
-	w.Write(sig)
+	w.Write([]byte(hex.EncodeToString(sig)))
 }
 
 func handleCurrNodes(w http.ResponseWriter, r *http.Request) {

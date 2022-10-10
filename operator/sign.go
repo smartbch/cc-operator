@@ -23,7 +23,7 @@ func initRpcClient(_nodesGovAddr, bootstrapRpcURL string) {
 
 	var err error
 	rpcClientsInfo, err = sbch.InitRpcClients(
-		nodesGovAddr, bootstrapRpcURL, minNodeCount, integrationMode)
+		nodesGovAddr, bootstrapRpcURL, minNodeCount, integrationTestMode)
 	if err != nil {
 		panic(err)
 	}
@@ -84,7 +84,7 @@ func watchSbchdNodes() {
 		if nodesChanged(latestNodes) {
 			newRpcClientsInfo = nil
 			clusterClient, validNodes, err := sbch.NewClusterRpcClientOfNodes(
-				nodesGovAddr, latestNodes, minNodeCount, integrationMode)
+				nodesGovAddr, latestNodes, minNodeCount, integrationTestMode)
 			if err != nil {
 				fmt.Println("failed to check sbchd nodes:", err.Error())
 				continue

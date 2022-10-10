@@ -22,11 +22,12 @@ func loadOrGenKey() {
 		if os.IsNotExist(err) {
 			// maybe it's first time to run this enclave app
 			genAndSealPrivKey()
+		} else {
+			panic(err)
 		}
-		return
+	} else {
+		unsealPrivKeyFromFile(fileData)
 	}
-
-	unsealPrivKeyFromFile(fileData)
 
 	pubKeyBytes = privKey.PubKey().SerializeCompressed()
 	fmt.Printf("pubkey: %s\n", hex.EncodeToString(pubKeyBytes))
@@ -34,7 +35,7 @@ func loadOrGenKey() {
 
 func genAndSealPrivKey() {
 	genNewPrivKey()
-	if !integrationMode {
+	if !integrationTestMode {
 		sealPrivKeyToFile()
 	}
 }
