@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -28,6 +29,8 @@ func (client *basicRpcClient) RpcURL() string {
 }
 
 func (client *basicRpcClient) SendPost(reqStr string) ([]byte, error) {
+	fmt.Println("basicRpcClient.SendPost, reqStr:", reqStr)
+
 	body := strings.NewReader(reqStr)
 	req, err := http.NewRequest("POST", client.url, body)
 	if err != nil {
@@ -50,6 +53,7 @@ func (client *basicRpcClient) SendPost(reqStr string) ([]byte, error) {
 		return nil, err
 	}
 
+	fmt.Println("resp:", string(respData))
 	return respData, nil
 }
 
@@ -62,7 +66,11 @@ func newBasicRpcClient(url string) *basicRpcClient {
 	}
 }
 
-func newBasicRpcClientOfNode(node NodeInfo) (*basicRpcClient, error) {
+func newBasicRpcClientOfNode(node NodeInfo, skipCert bool) (*basicRpcClient, error) {
+	if skipCert {
+		return newBasicRpcClient(node.RpcUrl), nil
+	}
+
 	certData, err := getCertData(node.CertUrl)
 	if err != nil {
 		return nil, err

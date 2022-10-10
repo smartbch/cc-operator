@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	nodesGovContractAddr = "0x0000000000000000000000000000000000000000" // TODO
+	//nodesGovContractAddr = "0x0000000000000000000000000000000000001234" // TODO
 
 	getNodeCountSel = "0x39bf397e" // ethers.utils.id('getNodeCount()')
 	getNodeByIdxSel = "0x1c53c280" // ethers.utils.id('nodes(uint256)')
@@ -26,16 +26,30 @@ const (
 
 var _ RpcClient = (*sbchRpcClient)(nil)
 
+// {"jsonrpc":"2.0","id":1,"result":null}
+// {"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"cross chain paused"}}
+type JsonRpcError struct {
+	Code    int64  `json:"code"`
+	Message string `json:"message"`
+}
+
+type GetUTXOsResp struct {
+	Version string        `json:"jsonrpc"`
+	Id      int64         `json:"id"`
+	Error   *JsonRpcError `json:"error"`
+	Result  []UtxoInfo    `json:"result"`
+}
+
 // smartBCH JSON-RPC client
 type sbchRpcClient struct {
 	basicClient  BasicRpcClient
 	nodesGovAddr string
 }
 
-func NewSimpleRpcClient(rpcUrl string) RpcClient {
+func NewSimpleRpcClient(nodesGovAddr, rpcUrl string) RpcClient {
 	return &sbchRpcClient{
+		nodesGovAddr: nodesGovAddr,
 		basicClient:  newBasicRpcClient(rpcUrl),
-		nodesGovAddr: nodesGovContractAddr,
 	}
 }
 
@@ -46,17 +60,23 @@ func (client sbchRpcClient) GetToBeConvertedUtxoSigHashes() ([]string, error) {
 	return client.getSigHashes(reqToBeConvertedUTXOs)
 }
 func (client sbchRpcClient) getSigHashes(reqStr string) ([]string, error) {
-	resp, err := client.basicClient.SendPost(reqStr)
+	respBytes, err := client.basicClient.SendPost(reqStr)
 	if err != nil {
 		return nil, err
 	}
 
-	var utxoInfos []UtxoInfo
-	err = json.Unmarshal(resp, &utxoInfos)
+	var resp GetUTXOsResp
+	err = json.Unmarshal(respBytes, &resp)
 	if err != nil {
 		return nil, err
 	}
 
+	if resp.Error != nil {
+		return nil, fmt.Errorf("failed to getSigHashes, code:%d, msg:%s",
+			resp.Error.Code, resp.Error.Message)
+	}
+
+	utxoInfos := resp.Result
 	sigHashes := make([]string, len(utxoInfos))
 	for i, utxoInfo := range utxoInfos {
 		sigHashes[i] = utxoInfo.TxSigHash.String()

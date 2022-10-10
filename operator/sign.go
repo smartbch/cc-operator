@@ -10,6 +10,7 @@ import (
 	"github.com/smartbch/ccoperator/sbch"
 )
 
+var nodesGovAddr string
 var rpcClientsInfoLock sync.RWMutex
 var rpcClientsInfo *sbch.RpcClientsInfo
 var newRpcClientsInfo *sbch.RpcClientsInfo
@@ -17,15 +18,19 @@ var nodesChangedTime time.Time
 
 var sigCache = gcache.New(sigCacheMaxCount).Expiration(sigCacheExpiration).Simple().Build()
 
-func initRpcClient(bootstrapRpcURL string) {
+func initRpcClient(_nodesGovAddr, bootstrapRpcURL string) {
+	nodesGovAddr = _nodesGovAddr
+
 	var err error
-	rpcClientsInfo, err = sbch.InitRpcClients(bootstrapRpcURL, minNodeCount)
+	rpcClientsInfo, err = sbch.InitRpcClients(
+		nodesGovAddr, bootstrapRpcURL, minNodeCount, integrationMode)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func getAndSignSigHashes() {
+	fmt.Println("start to getAndSignSigHashes ...")
 	for {
 		time.Sleep(getSigHashesInterval)
 
@@ -65,6 +70,7 @@ func getAndSignSigHashes() {
 }
 
 func watchSbchdNodes() {
+	fmt.Println("start to watchSbchdNodes ...")
 	// TODO: change to time.Ticker?
 	for {
 		time.Sleep(checkNodesInterval)
@@ -78,7 +84,7 @@ func watchSbchdNodes() {
 		if nodesChanged(latestNodes) {
 			newRpcClientsInfo = nil
 			clusterClient, validNodes, err := sbch.NewClusterRpcClientOfNodes(
-				latestNodes, minNodeCount)
+				nodesGovAddr, latestNodes, minNodeCount, integrationMode)
 			if err != nil {
 				fmt.Println("failed to check sbchd nodes:", err.Error())
 				continue

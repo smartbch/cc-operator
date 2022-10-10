@@ -15,6 +15,7 @@ var privKey *bchec.PrivateKey
 var pubKeyBytes []byte // compressed
 
 func loadOrGenKey() {
+	fmt.Println("load private key from file:", keyFile)
 	fileData, err := os.ReadFile(keyFile)
 	if err != nil {
 		fmt.Printf("read file failed, %s\n", err.Error())
@@ -39,6 +40,7 @@ func genAndSealPrivKey() {
 }
 
 func genNewPrivKey() {
+	fmt.Println("generate new private key")
 	key, err := ecdsa.GenerateKey(bchec.S256(), &utils.RandReader{})
 	if err != nil {
 		panic(err)
@@ -48,6 +50,7 @@ func genNewPrivKey() {
 }
 
 func sealPrivKeyToFile() {
+	fmt.Println("seal private key to file:", keyFile)
 	out, err := ecrypto.SealWithUniqueKey(privKey.Serialize(), nil)
 	if err != nil {
 		panic(err)
@@ -60,6 +63,7 @@ func sealPrivKeyToFile() {
 }
 
 func unsealPrivKeyFromFile(fileData []byte) {
+	fmt.Println("unseal private key")
 	rawData, err := ecrypto.Unseal(fileData, nil)
 	if err != nil {
 		fmt.Printf("unseal file data failed, %s\n", err.Error())

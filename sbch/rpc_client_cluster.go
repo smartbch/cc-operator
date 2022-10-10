@@ -18,6 +18,8 @@ func (cluster *clusterRpcClient) RpcURL() string {
 }
 
 func (cluster *clusterRpcClient) SendPost(reqStr string) ([]byte, error) {
+	fmt.Println("clusterRpcClient.SendPost, reqStr:", reqStr)
+
 	nClients := len(cluster.clients)
 	resps := make([][]byte, nClients)
 	errors := make([]error, nClients)
@@ -50,21 +52,22 @@ func (cluster *clusterRpcClient) SendPost(reqStr string) ([]byte, error) {
 		}
 	}
 
+	fmt.Println("resp:", string(resp0))
 	return resp0, nil
 }
 
-func NewClusterRpcClientOfNodes(sbchdNodes []NodeInfo,
-	minNodeCount int) (RpcClient, []NodeInfo, error) {
+func NewClusterRpcClientOfNodes(nodesGovAddr string, sbchdNodes []NodeInfo,
+	minNodeCount int, skipCert bool) (RpcClient, []NodeInfo, error) {
 
 	if len(sbchdNodes) < minNodeCount {
-		return nil, nil, fmt.Errorf("not enough sbchd nodes: %d < %d",
+		return nil, nil, fmt.Errorf("not enough nodes info: %d < %d",
 			len(sbchdNodes), minNodeCount)
 	}
 
 	validNodes := make([]NodeInfo, 0, len(sbchdNodes))
 	rpcClients := make([]BasicRpcClient, 0, len(sbchdNodes))
 	for _, node := range sbchdNodes {
-		client, err := newBasicRpcClientOfNode(node)
+		client, err := newBasicRpcClientOfNode(node, skipCert)
 		if err != nil {
 			fmt.Println("failed to create rpc basicClient, node:", node.ID, "error:", err.Error())
 		} else {
@@ -74,16 +77,16 @@ func NewClusterRpcClientOfNodes(sbchdNodes []NodeInfo,
 	}
 	if len(rpcClients) < minNodeCount {
 		return nil, nil, fmt.Errorf("not enough checked nodes: %d < %d",
-			len(sbchdNodes), minNodeCount)
+			len(rpcClients), minNodeCount)
 	}
 
-	clusterClient := newClusterRpcClient(rpcClients)
+	clusterClient := newClusterRpcClient(nodesGovAddr, rpcClients)
 	return clusterClient, validNodes, nil
 }
 
-func newClusterRpcClient(clients []BasicRpcClient) RpcClient {
+func newClusterRpcClient(nodesGovAddr string, clients []BasicRpcClient) RpcClient {
 	return &sbchRpcClient{
-		nodesGovAddr: nodesGovContractAddr,
+		nodesGovAddr: nodesGovAddr,
 		basicClient: &clusterRpcClient{
 			clients: clients,
 		},

@@ -2,15 +2,20 @@ package sbch
 
 import "fmt"
 
-func InitRpcClients(bootstrapRpcUrl string, minNodeCount int) (*RpcClientsInfo, error) {
-	fmt.Println("InitRpcClients, bootstrapRpcUrl:", bootstrapRpcUrl, "minNodeCount:", minNodeCount)
-	bootstrapClient := NewSimpleRpcClient(bootstrapRpcUrl)
+func InitRpcClients(nodesGovAddr, bootstrapRpcUrl string, minNodeCount int, skipCert bool) (*RpcClientsInfo, error) {
+	fmt.Println("InitRpcClients, nodesGovAddr:", nodesGovAddr, "bootstrapRpcUrl:", bootstrapRpcUrl, "minNodeCount:", minNodeCount)
+
+	bootstrapClient := NewSimpleRpcClient(nodesGovAddr, bootstrapRpcUrl)
 	allNodes, err := bootstrapClient.GetSbchdNodes()
 	if err != nil {
 		return nil, err
 	}
 
-	clusterClient, validNodes, err := NewClusterRpcClientOfNodes(allNodes, minNodeCount)
+	clusterClient, validNodes, err := NewClusterRpcClientOfNodes(nodesGovAddr, allNodes, minNodeCount, skipCert)
+	if err != nil {
+		return nil, err
+	}
+
 	return &RpcClientsInfo{
 		BootstrapRpcClient: bootstrapClient,
 		ClusterRpcClient:   clusterClient,

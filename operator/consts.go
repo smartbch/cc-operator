@@ -7,12 +7,12 @@ const (
 
 	keyFile = "/data/key.txt"
 
-	minNodeCount = 5
+	minNodeCount = 2
 
 	sigCacheMaxCount   = 10000
 	sigCacheExpiration = 2 * time.Hour
 
-	getSigHashesInterval = 1 * time.Minute
+	getSigHashesInterval = 5 * time.Second
 	checkNodesInterval   = 1 * time.Hour
 	newNodesDelayTime    = 6 * time.Hour
 

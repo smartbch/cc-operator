@@ -15,7 +15,7 @@ func startHttpServer(listenAddr string) {
 	initHttpHandlers()
 
 	server := http.Server{Addr: listenAddr, ReadTimeout: 3 * time.Second, WriteTimeout: 5 * time.Second}
-	fmt.Println("listening ...")
+	fmt.Println("listening at:", listenAddr, "...")
 	err := server.ListenAndServe()
 	fmt.Println(err)
 }
