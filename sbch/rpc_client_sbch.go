@@ -26,8 +26,6 @@ const (
 
 var _ RpcClient = (*sbchRpcClient)(nil)
 
-// {"jsonrpc":"2.0","id":1,"result":null}
-// {"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"cross chain paused"}}
 type JsonRpcError struct {
 	Code    int64  `json:"code"`
 	Message string `json:"message"`
