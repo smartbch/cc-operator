@@ -63,13 +63,16 @@ func handleJwtToken(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleSig(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("handleSig:", r.URL.String())
 	vals := r.URL.Query()["hash"]
 	if len(vals) == 0 {
 		return
 	}
 
 	sig := getSig(vals[0])
-	w.Write([]byte(hex.EncodeToString(sig)))
+	sigHex := hex.EncodeToString(sig)
+	fmt.Println("sigHex:", sigHex)
+	w.Write([]byte(sigHex))
 }
 
 func handleCurrNodes(w http.ResponseWriter, r *http.Request) {

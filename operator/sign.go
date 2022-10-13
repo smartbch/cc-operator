@@ -1,8 +1,10 @@
 package operator
 
 import (
+	"encoding/hex"
 	"fmt"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
 
@@ -38,18 +40,23 @@ func getAndSignSigHashes() {
 		rpcClients := rpcClientsInfo.ClusterRpcClient
 		rpcClientsInfoLock.RUnlock()
 
+		fmt.Println("GetRedeemingUtxoSigHashes ...")
 		redeemingUtxoSigHashes, err := rpcClients.GetRedeemingUtxoSigHashes()
 		if err != nil {
 			fmt.Println("can not get sig hashes:", err.Error())
 			continue
 		}
+		fmt.Println("sigHashes:", redeemingUtxoSigHashes)
+
+		fmt.Println("GetToBeConvertedUtxoSigHashes ...")
 		toBeConvertedUtxoSigHashes, err := rpcClients.GetToBeConvertedUtxoSigHashes()
 		if err != nil {
 			fmt.Println("can not get sig hashes:", err.Error())
 			continue
 		}
-		allSigHashes := append(redeemingUtxoSigHashes, toBeConvertedUtxoSigHashes...)
+		fmt.Println("sigHashes:", toBeConvertedUtxoSigHashes)
 
+		allSigHashes := append(redeemingUtxoSigHashes, toBeConvertedUtxoSigHashes...)
 		for _, sigHashHex := range allSigHashes {
 			if sigCache.Has(sigHashHex) {
 				continue
@@ -61,6 +68,7 @@ func getAndSignSigHashes() {
 				continue
 			}
 
+			fmt.Println("sigHash:", sigHashHex, "sig:", hex.EncodeToString(sigBytes))
 			err = sigCache.SetWithExpire(sigHashHex, sigBytes, sigCacheExpiration)
 			if err != nil {
 				fmt.Println("failed to put sig into cache:", err.Error())
@@ -126,6 +134,10 @@ func nodesEqual(s1, s2 []sbch.NodeInfo) bool {
 }
 
 func getSig(sigHashHex string) []byte {
+	if strings.HasPrefix(sigHashHex, "0x") {
+		sigHashHex = sigHashHex[0:2]
+	}
+
 	val, err := sigCache.Get(sigHashHex)
 	if err != nil {
 		return nil

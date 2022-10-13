@@ -122,7 +122,7 @@ func TestGetRedeemingUtxoSigHashes(t *testing.T) {
 	for _, c := range []RpcClient{c1, c2} {
 		hashes, err := c.GetRedeemingUtxoSigHashes()
 		require.NoError(t, err)
-		require.Len(t, hashes, 2)
+		require.Equal(t, hashes, []string{"17", "27"})
 	}
 }
 
@@ -134,6 +134,6 @@ func TestGetToBeConvertedUtxoSigHashes(t *testing.T) {
 	for _, c := range []RpcClient{c1, c2} {
 		hashes, err := c.GetToBeConvertedUtxoSigHashes()
 		require.NoError(t, err)
-		require.Len(t, hashes, 2)
+		require.Equal(t, hashes, []string{"17", "27"})
 	}
 }

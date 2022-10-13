@@ -77,7 +77,7 @@ func (client sbchRpcClient) getSigHashes(reqStr string) ([]string, error) {
 	utxoInfos := resp.Result
 	sigHashes := make([]string, len(utxoInfos))
 	for i, utxoInfo := range utxoInfos {
-		sigHashes[i] = utxoInfo.TxSigHash.String()
+		sigHashes[i] = hex.EncodeToString(utxoInfo.TxSigHash)
 	}
 
 	return sigHashes, nil

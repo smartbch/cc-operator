@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/edgelesssys/ego/ecrypto"
+	gethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/gcash/bchd/bchec"
 	"github.com/smartbch/ccoperator/utils"
 )
@@ -75,11 +76,7 @@ func unsealPrivKeyFromFile(fileData []byte) {
 }
 
 func signSigHashECDSA(sigHashHex string) ([]byte, error) {
-	sigHashBytes, err := hex.DecodeString(sigHashHex)
-	if err != nil {
-		return nil, err
-	}
-
+	sigHashBytes := gethcmn.FromHex(sigHashHex)
 	sig, err := privKey.SignECDSA(sigHashBytes)
 	if err != nil {
 		return nil, err
@@ -89,11 +86,7 @@ func signSigHashECDSA(sigHashHex string) ([]byte, error) {
 }
 
 func signSigHashSchnorr(sigHashHex string) ([]byte, error) {
-	sigHashBytes, err := hex.DecodeString(sigHashHex)
-	if err != nil {
-		return nil, err
-	}
-
+	sigHashBytes := gethcmn.FromHex(sigHashHex)
 	sig, err := privKey.SignSchnorr(sigHashBytes)
 	if err != nil {
 		return nil, err
