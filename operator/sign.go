@@ -135,7 +135,7 @@ func nodesEqual(s1, s2 []sbch.NodeInfo) bool {
 
 func getSig(sigHashHex string) []byte {
 	if strings.HasPrefix(sigHashHex, "0x") {
-		sigHashHex = sigHashHex[0:2]
+		sigHashHex = sigHashHex[2:]
 	}
 
 	val, err := sigCache.Get(sigHashHex)
