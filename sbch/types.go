@@ -18,11 +18,11 @@ type RpcClient interface {
 }
 
 type NodeInfo struct {
-	ID       uint64
-	CertHash gethcmn.Hash
-	CertUrl  string
-	RpcUrl   string
-	Intro    string
+	ID       uint64       `json:"id"`
+	CertHash gethcmn.Hash `json:"certHash"`
+	CertUrl  string       `json:"certUrl"`
+	RpcUrl   string       `json:"rpcUrl"`
+	Intro    string       `json:"intro"`
 }
 
 type RpcClientsInfo struct {
