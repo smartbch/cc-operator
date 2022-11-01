@@ -11,26 +11,6 @@ import (
 	"github.com/edgelesssys/ego/enclave"
 )
 
-type Resp struct {
-	Success bool        `json:"success"`
-	Error   string      `json:"error,omitempty"`
-	Result  interface{} `json:"result,omitempty"`
-}
-
-func (resp Resp) toJSON() []byte {
-	bytes, _ := json.Marshal(resp)
-	return bytes
-}
-func (resp Resp) writeTo(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "origin, content-type, accept")
-
-	bytes, _ := json.Marshal(resp)
-	_, _ = w.Write(bytes)
-}
-
 func startHttpServer(listenAddr string) {
 	mux := createHttpHandlers()
 	server := http.Server{
@@ -60,7 +40,7 @@ func handlePubKey(w http.ResponseWriter, r *http.Request) {
 		Success: true,
 		Result:  "0x" + hex.EncodeToString(pubKeyBytes),
 	}
-	resp.writeTo(w)
+	resp.WriteTo(w)
 }
 
 func handleReport(w http.ResponseWriter, r *http.Request) {
@@ -81,7 +61,7 @@ func handleReport(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	resp.writeTo(w)
+	resp.WriteTo(w)
 }
 
 func handleJwtToken(w http.ResponseWriter, r *http.Request) {
@@ -101,7 +81,7 @@ func handleJwtToken(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	resp.writeTo(w)
+	resp.WriteTo(w)
 }
 
 func handleSig(w http.ResponseWriter, r *http.Request) {
@@ -123,8 +103,8 @@ func handleSig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	fmt.Println(string(resp.toJSON()))
-	resp.writeTo(w)
+	fmt.Println(string(resp.ToJSON()))
+	resp.WriteTo(w)
 }
 
 func handleCurrNodes(w http.ResponseWriter, r *http.Request) {
@@ -132,12 +112,12 @@ func handleCurrNodes(w http.ResponseWriter, r *http.Request) {
 		Success: true,
 		Result:  getCurrNodes(),
 	}
-	resp.writeTo(w)
+	resp.WriteTo(w)
 }
 func handleNewNodes(w http.ResponseWriter, r *http.Request) {
 	resp := Resp{
 		Success: true,
 		Result:  getNewNodes(),
 	}
-	resp.writeTo(w)
+	resp.WriteTo(w)
 }
