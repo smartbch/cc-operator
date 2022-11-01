@@ -1,6 +1,8 @@
 package sbch
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func InitRpcClients(nodesGovAddr, bootstrapRpcUrl string, minNodeCount int, skipCert bool) (*RpcClientsInfo, error) {
 	fmt.Println("InitRpcClients, nodesGovAddr:", nodesGovAddr, "bootstrapRpcUrl:", bootstrapRpcUrl, "minNodeCount:", minNodeCount)

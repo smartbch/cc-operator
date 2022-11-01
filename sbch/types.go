@@ -15,6 +15,7 @@ type RpcClient interface {
 	GetSbchdNodes() ([]NodeInfo, error)
 	GetRedeemingUtxoSigHashes() ([]string, error)
 	GetToBeConvertedUtxoSigHashes() ([]string, error)
+	RpcURL() string
 }
 
 type NodeInfo struct {
