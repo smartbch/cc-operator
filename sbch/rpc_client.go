@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func InitRpcClients(nodesGovAddr, bootstrapRpcUrl string, minNodeCount int, skipCert bool) (*RpcClientsInfo, error) {
+func InitRpcClients(nodesGovAddr, bootstrapRpcUrl string, minNodeCount int, skipPbkCheck bool) (*RpcClientsInfo, error) {
 	fmt.Println("InitRpcClients, nodesGovAddr:", nodesGovAddr, "bootstrapRpcUrl:", bootstrapRpcUrl, "minNodeCount:", minNodeCount)
 
 	bootstrapClient := NewSimpleRpcClient(nodesGovAddr, bootstrapRpcUrl)
@@ -13,7 +13,7 @@ func InitRpcClients(nodesGovAddr, bootstrapRpcUrl string, minNodeCount int, skip
 		return nil, err
 	}
 
-	clusterClient, validNodes, err := NewClusterRpcClientOfNodes(nodesGovAddr, allNodes, minNodeCount, skipCert)
+	clusterClient, validNodes, err := NewClusterRpcClientOfNodes(nodesGovAddr, allNodes, minNodeCount, skipPbkCheck)
 	if err != nil {
 		return nil, err
 	}

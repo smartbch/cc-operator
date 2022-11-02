@@ -85,11 +85,10 @@ func TestHandleCurrNodes(t *testing.T) {
 	rpcClientsInfo = &sbch.RpcClientsInfo{
 		AllNodes: []sbch.NodeInfo{
 			{
-				ID:       1234,
-				CertHash: [32]byte{0xce, 0x12, 0x34},
-				CertUrl:  "cert1234",
-				RpcUrl:   "rpc1234",
-				Intro:    "node1234",
+				ID:      1234,
+				PbkHash: [32]byte{0xce, 0x12, 0x34},
+				RpcUrl:  "rpc1234",
+				Intro:   "node1234",
 			},
 		},
 	}
@@ -98,7 +97,7 @@ func TestHandleCurrNodes(t *testing.T) {
 	resp, err := callHandler("/nodes")
 	require.NoError(t, err)
 
-	expected := `{"success":true,"result":[{"id":1234,"certHash":"0xce12340000000000000000000000000000000000000000000000000000000000","certUrl":"cert1234","rpcUrl":"rpc1234","intro":"node1234"}]}`
+	expected := `{"success":true,"result":[{"id":1234,"pbkHash":"0xce12340000000000000000000000000000000000000000000000000000000000","rpcUrl":"rpc1234","intro":"node1234"}]}`
 	require.Equal(t, expected, resp)
 }
 
@@ -107,11 +106,10 @@ func TestHandleNewNodes(t *testing.T) {
 	newRpcClientsInfo = &sbch.RpcClientsInfo{
 		AllNodes: []sbch.NodeInfo{
 			{
-				ID:       2345,
-				CertHash: [32]byte{0xce, 0x23, 0x45},
-				CertUrl:  "cert2345",
-				RpcUrl:   "rpc2345",
-				Intro:    "node2345",
+				ID:      2345,
+				PbkHash: [32]byte{0xce, 0x23, 0x45},
+				RpcUrl:  "rpc2345",
+				Intro:   "node2345",
 			},
 		},
 	}
@@ -120,6 +118,6 @@ func TestHandleNewNodes(t *testing.T) {
 	resp, err := callHandler("/newNodes")
 	require.NoError(t, err)
 
-	expected := `{"success":true,"result":[{"id":2345,"certHash":"0xce23450000000000000000000000000000000000000000000000000000000000","certUrl":"cert2345","rpcUrl":"rpc2345","intro":"node2345"}]}`
+	expected := `{"success":true,"result":[{"id":2345,"pbkHash":"0xce23450000000000000000000000000000000000000000000000000000000000","rpcUrl":"rpc2345","intro":"node2345"}]}`
 	require.Equal(t, expected, resp)
 }

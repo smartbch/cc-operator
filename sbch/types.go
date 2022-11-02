@@ -5,18 +5,18 @@ import (
 )
 
 type RpcClient interface {
+	RpcURL() string
 	GetSbchdNodes() ([]NodeInfo, error)
 	GetRedeemingUtxoSigHashes() ([]string, error)
 	GetToBeConvertedUtxoSigHashes() ([]string, error)
-	RpcURL() string
+	GetRpcPubkey() ([]byte, error)
 }
 
 type NodeInfo struct {
-	ID       uint64       `json:"id"`
-	CertHash gethcmn.Hash `json:"certHash"`
-	CertUrl  string       `json:"certUrl"`
-	RpcUrl   string       `json:"rpcUrl"`
-	Intro    string       `json:"intro"`
+	ID      uint64       `json:"id"`
+	PbkHash gethcmn.Hash `json:"pbkHash"`
+	RpcUrl  string       `json:"rpcUrl"`
+	Intro   string       `json:"intro"`
 }
 
 type RpcClientsInfo struct {

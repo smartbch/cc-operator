@@ -92,16 +92,15 @@ func (client SimpleRpcClient) getNodeByIdx(n uint64, ctx context.Context) (node 
 		return node, err
 	}
 
-	if len(nodeInfoData) != 32*5 {
+	if len(nodeInfoData) != 32*4 {
 		err = errors.New("invalid NodeInfo data: " + hex.EncodeToString(nodeInfoData))
 		return
 	}
 
 	node.ID = uint256.NewInt(0).SetBytes(nodeInfoData[:32]).Uint64()
-	copy(node.CertHash[:], nodeInfoData[32:32*2])
-	node.CertUrl = string(bytes.TrimRight(nodeInfoData[32*2:32*3], string([]byte{0})))
-	node.RpcUrl = string(bytes.TrimRight(nodeInfoData[32*3:32*4], string([]byte{0})))
-	node.Intro = string(bytes.TrimRight(nodeInfoData[32*4:], string([]byte{0})))
+	copy(node.PbkHash[:], nodeInfoData[32:32*2])
+	node.RpcUrl = string(bytes.TrimRight(nodeInfoData[32*2:32*3], string([]byte{0})))
+	node.Intro = string(bytes.TrimRight(nodeInfoData[32*3:], string([]byte{0})))
 	return
 }
 
@@ -142,4 +141,15 @@ func (client SimpleRpcClient) GetToBeConvertedUtxoSigHashes() ([]string, error) 
 		sigHashes[i] = hex.EncodeToString(utxoInfo.TxSigHash)
 	}
 	return sigHashes, nil
+}
+
+func (client SimpleRpcClient) GetRpcPubkey() ([]byte, error) {
+	ctx := context.Background()
+	if client.reqTimeout > 0 {
+		var cancelFn context.CancelFunc
+		ctx, cancelFn = context.WithTimeout(ctx, client.reqTimeout)
+		defer cancelFn()
+	}
+
+	return client.sbchRpcClient.GetRpcPubkey(ctx)
 }

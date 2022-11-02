@@ -5,8 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	gethcmn "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +12,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	gethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 const (
@@ -21,11 +22,11 @@ const (
 	getNodeCountCallData = `{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{"data":"0x39bf397e","from":"0x0000000000000000000000000000000000000000","to":"0x8f1cc6b6f276b776f3b7db417c65fe356a164715"},"latest"]}`
 	getNodeCountRetData  = `{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000003"}`
 	getNode0CallData     = `{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{"data":"0x1c53c2800000000000000000000000000000000000000000000000000000000000000000","from":"0x0000000000000000000000000000000000000000","to":"0x8f1cc6b6f276b776f3b7db417c65fe356a164715"},"latest"]}`
-	getNode0RetData      = `{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000001d86b49e3424e557beebf67bd06842cdb88e314c44887f3f265b7f81107dd61233132372e302e302e312f636572740000000000000000000000000000000000003132372e302e302e313a383534350000000000000000000000000000000000003132372e302e302e313a38353435000000000000000000000000000000000000"}`
+	getNode0RetData      = `{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000001d86b49e3424e557beebf67bd06842cdb88e314c44887f3f265b7f81107dd61233132372e302e302e313a383534350000000000000000000000000000000000003132372e302e302e313a38353435000000000000000000000000000000000000"}`
 	getNode1CallData     = `{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{"data":"0x1c53c2800000000000000000000000000000000000000000000000000000000000000001","from":"0x0000000000000000000000000000000000000000","to":"0x8f1cc6b6f276b776f3b7db417c65fe356a164715"},"latest"]}`
-	getNode1RetData      = `{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000002d86b49e3424e557beebf67bd06842cdb88e314c44887f3f265b7f81107dd62223132372e302e302e322f636572740000000000000000000000000000000000003132372e302e302e323a383534350000000000000000000000000000000000003132372e302e302e323a38353435000000000000000000000000000000000000"}`
+	getNode1RetData      = `{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000002d86b49e3424e557beebf67bd06842cdb88e314c44887f3f265b7f81107dd62223132372e302e302e323a383534350000000000000000000000000000000000003132372e302e302e323a38353435000000000000000000000000000000000000"}`
 	getNode2CallData     = `{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{"data":"0x1c53c2800000000000000000000000000000000000000000000000000000000000000002","from":"0x0000000000000000000000000000000000000000","to":"0x8f1cc6b6f276b776f3b7db417c65fe356a164715"},"latest"]}`
-	getNode2RetData      = `{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000003d86b49e3424e557beebf67bd06842cdb88e314c44887f3f265b7f81107dd63333132372e302e302e332f636572740000000000000000000000000000000000003132372e302e302e333a383534350000000000000000000000000000000000003132372e302e302e333a38353435000000000000000000000000000000000000"}`
+	getNode2RetData      = `{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000003d86b49e3424e557beebf67bd06842cdb88e314c44887f3f265b7f81107dd63333132372e302e302e333a383534350000000000000000000000000000000000003132372e302e302e333a38353435000000000000000000000000000000000000"}`
 
 	getRpcPubkeyReq  = `{"jsonrpc":"2.0","id":1,"method":"sbch_getRpcPubkey"}`
 	getRpcPubkeyResp = `{"jsonrpc":"2.0","id":1,"result":"049791f89a61c582c3584b3409147ace7df3c41bdef296b77b0d50d95bc6a10d8d378ed2167c43b21265ea819896c2fdddc41581e1deceb029f79675cfcb46f56c"}`
@@ -123,8 +124,7 @@ func TestGetNodeByIdx(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), node.ID)
 	require.Equal(t, "d86b49e3424e557beebf67bd06842cdb88e314c44887f3f265b7f81107dd6222",
-		hex.EncodeToString(node.CertHash[:]))
-	require.Equal(t, "127.0.0.2/cert", node.CertUrl)
+		hex.EncodeToString(node.PbkHash[:]))
 	require.Equal(t, "127.0.0.2:8545", node.RpcUrl)
 }
 
@@ -133,7 +133,7 @@ func TestGetSbchdNodes(t *testing.T) {
 	defer fakeServer.Close()
 
 	c1 := NewSimpleRpcClient(testNodesGovAddr, fakeServer.URL)
-	c2 := NewClusterClient(testNodesGovAddr, []string{fakeServer.URL, fakeServer.URL})
+	c2 := newClusterClient([]RpcClient{c1, c1})
 
 	for _, c := range []RpcClient{c1, c2} {
 		nodes, err := c.GetSbchdNodes()
@@ -147,7 +147,7 @@ func TestGetRedeemingUtxoSigHashes(t *testing.T) {
 	defer fakeServer.Close()
 
 	c1 := NewSimpleRpcClient(testNodesGovAddr, fakeServer.URL)
-	c2 := NewClusterClient(testNodesGovAddr, []string{fakeServer.URL, fakeServer.URL})
+	c2 := newClusterClient([]RpcClient{c1, c1})
 
 	for _, c := range []RpcClient{c1, c2} {
 		hashes, err := c.GetRedeemingUtxoSigHashes()
@@ -161,7 +161,7 @@ func TestGetToBeConvertedUtxoSigHashes(t *testing.T) {
 	defer fakeServer.Close()
 
 	c1 := NewSimpleRpcClient(testNodesGovAddr, fakeServer.URL)
-	c2 := NewClusterClient(testNodesGovAddr, []string{fakeServer.URL, fakeServer.URL})
+	c2 := newClusterClient([]RpcClient{c1, c1})
 
 	for _, c := range []RpcClient{c1, c2} {
 		hashes, err := c.GetToBeConvertedUtxoSigHashes()

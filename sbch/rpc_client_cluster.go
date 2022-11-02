@@ -1,6 +1,7 @@
 package sbch
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"reflect"
 	"sync"
@@ -12,27 +13,45 @@ type ClusterClient struct {
 	clients []RpcClient
 }
 
-// TODO: check cert hash of nodes
 func NewClusterRpcClientOfNodes(nodesGovAddr string, nodes []NodeInfo,
-	minNodeCount int, skipCert bool) (RpcClient, []NodeInfo, error) {
+	minNodeCount int, skipPbkCheck bool) (RpcClient, []NodeInfo, error) {
 
-	rpcUrls := make([]string, len(nodes))
-	for idx, node := range nodes {
-		rpcUrls[idx] = node.RpcUrl
+	okNodes := make([]NodeInfo, 0, len(nodes))
+	clients := make([]RpcClient, 0, len(nodes))
+	for _, node := range nodes {
+		client := NewSimpleRpcClient(nodesGovAddr, node.RpcUrl)
+		pbk, err := client.GetRpcPubkey()
+		if err != nil {
+			fmt.Println("failed to get pubkey from node:", node.RpcUrl, err)
+			continue
+		}
+
+		if !skipPbkCheck && sha256.Sum256(pbk) != node.PbkHash {
+			fmt.Println("pubkey not match:", node.RpcUrl)
+			continue
+		}
+
+		okNodes = append(okNodes, node)
+		clients = append(clients, client)
 	}
-	return NewClusterClient(nodesGovAddr, rpcUrls), nodes, nil
+
+	if len(okNodes) < minNodeCount {
+		return nil, nil, fmt.Errorf("not enough nodes to connect")
+	}
+
+	return newClusterClient(clients), nodes, nil
 }
 
-func NewClusterClient(nodesGovAddr string, rpcUrls []string) RpcClient {
-	clients := make([]RpcClient, len(rpcUrls))
-	for idx, url := range rpcUrls {
-		clients[idx] = NewSimpleRpcClient(nodesGovAddr, url)
-	}
+func newClusterClient(clients []RpcClient) RpcClient {
 	return ClusterClient{clients: clients}
 }
 
 func (cluster ClusterClient) RpcURL() string {
 	return "clusterRpcClient"
+}
+
+func (cluster ClusterClient) GetRpcPubkey() ([]byte, error) {
+	panic("not supported")
 }
 
 func (cluster ClusterClient) GetSbchdNodes() ([]NodeInfo, error) {
