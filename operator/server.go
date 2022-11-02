@@ -9,15 +9,24 @@ import (
 	"time"
 
 	"github.com/edgelesssys/ego/enclave"
+
+	"github.com/smartbch/ccoperator/utils"
 )
 
-func startHttpServer(listenAddr string) {
+var certBytes []byte
+
+func startHttpsServer(serverName, listenAddr string) {
+	// Create a TLS config with a self-signed certificate and an embedded report.
+	cert, _, tlsCfg := utils.CreateCertificate(serverName)
+	certBytes = cert
+
 	mux := createHttpHandlers()
 	server := http.Server{
 		Addr:         listenAddr,
 		Handler:      mux,
 		ReadTimeout:  3 * time.Second,
 		WriteTimeout: 5 * time.Second,
+		TLSConfig:    &tlsCfg,
 	}
 	fmt.Println("listening at:", listenAddr, "...")
 	err := server.ListenAndServe()
@@ -26,6 +35,7 @@ func startHttpServer(listenAddr string) {
 
 func createHttpHandlers() *http.ServeMux {
 	mux := http.NewServeMux()
+	mux.HandleFunc("/cert", handleCert)
 	mux.HandleFunc("/pubkey", handlePubKey)
 	mux.HandleFunc("/report", handleReport)
 	mux.HandleFunc("/jwt", handleJwtToken)
@@ -33,6 +43,14 @@ func createHttpHandlers() *http.ServeMux {
 	mux.HandleFunc("/nodes", handleCurrNodes)
 	mux.HandleFunc("/newNodes", handleNewNodes)
 	return mux
+}
+
+func handleCert(w http.ResponseWriter, r *http.Request) {
+	resp := Resp{
+		Success: true,
+		Result:  "0x" + hex.EncodeToString(certBytes),
+	}
+	resp.WriteTo(w)
 }
 
 func handlePubKey(w http.ResponseWriter, r *http.Request) {

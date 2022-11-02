@@ -24,6 +24,16 @@ func callHandler(path string) (string, error) {
 	return string(data), err
 }
 
+func TestHandleCert(t *testing.T) {
+	oldCertBytes := certBytes
+	certBytes = []byte{0x12, 0x34}
+	defer func() { certBytes = oldCertBytes }()
+
+	resp, err := callHandler("/cert")
+	require.NoError(t, err)
+	require.Equal(t, `{"success":true,"result":"0x1234"}`, resp)
+}
+
 func TestHandlePubKey(t *testing.T) {
 	oldPubkeyBytes := pubKeyBytes
 	pubKeyBytes = []byte{0x12, 0x34}

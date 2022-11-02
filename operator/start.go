@@ -1,10 +1,10 @@
 package operator
 
-func Start(listenAddr, bootstrapRpcURL, nodesGovAddr string) {
+func Start(serverName, listenAddr, bootstrapRpcURL, nodesGovAddr string) {
 	loadOrGenKey()
 	initRpcClient(nodesGovAddr, bootstrapRpcURL)
 	go getAndSignSigHashes()
 	go watchSbchdNodes()
-	go startHttpServer(listenAddr)
+	go startHttpsServer(serverName, listenAddr)
 	select {}
 }

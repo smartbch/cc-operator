@@ -7,6 +7,7 @@ import (
 )
 
 var (
+	serverName      = "sbch-operator"
 	listenAddr      = "0.0.0.0:8801"
 	bootstrapRpcURL = "http://localhost:8545"
 
@@ -15,10 +16,11 @@ var (
 )
 
 func main() {
+	flag.StringVar(&serverName, "serverName", "sbch-operator", "server name to generate TLS certificate")
 	flag.StringVar(&listenAddr, "listenAddr", "0.0.0.0:8801", "listen addr, ip:port")
 	flag.StringVar(&bootstrapRpcURL, "bootstrapRpcURL", "http://localhost:8545", "bootstrap smartBCH RPC URL")
 	flag.StringVar(&nodesGovAddr, "nodesGovAddr", "0x0000000000000000000000000000000000001234", "address of NodesGov contract")
 	flag.Parse()
 
-	operator.Start(listenAddr, bootstrapRpcURL, nodesGovAddr)
+	operator.Start(serverName, listenAddr, bootstrapRpcURL, nodesGovAddr)
 }
