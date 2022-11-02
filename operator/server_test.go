@@ -121,3 +121,7 @@ func TestHandleNewNodes(t *testing.T) {
 	expected := `{"success":true,"result":[{"id":2345,"pbkHash":"0xce23450000000000000000000000000000000000000000000000000000000000","rpcUrl":"rpc2345","intro":"node2345"}]}`
 	require.Equal(t, expected, resp)
 }
+
+func TestHandleSuspend(t *testing.T) {
+	// TODO
+}

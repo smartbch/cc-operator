@@ -6,15 +6,21 @@ import (
 )
 
 type Resp struct {
-	Success bool        `json:"success"`
-	Error   string      `json:"error,omitempty"`
-	Result  interface{} `json:"result,omitempty"`
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+	Result  any    `json:"result,omitempty"`
 }
 
 func NewErrResp(err string) Resp {
 	return Resp{
 		Success: false,
 		Error:   err,
+	}
+}
+func NewOkResp(result any) Resp {
+	return Resp{
+		Success: true,
+		Result:  result,
 	}
 }
 
