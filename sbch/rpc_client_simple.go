@@ -30,7 +30,7 @@ type SimpleRpcClient struct {
 	reqTimeout    time.Duration
 }
 
-func NewSimpleRpcClient(nodesGovAddr, rpcUrl string) SimpleRpcClient {
+func NewSimpleRpcClient(nodesGovAddr, rpcUrl string, reqTimeout time.Duration) SimpleRpcClient {
 	sbchRpcClient, err := sbchrpcclient.DialHTTP(rpcUrl)
 	if err != nil {
 		panic(err) // TODO: return error
@@ -40,6 +40,7 @@ func NewSimpleRpcClient(nodesGovAddr, rpcUrl string) SimpleRpcClient {
 		nodesGovAddr:  gethcmn.HexToAddress(nodesGovAddr),
 		sbchRpcClient: sbchRpcClient,
 		rpcUrl:        rpcUrl,
+		reqTimeout:    reqTimeout,
 	}
 }
 

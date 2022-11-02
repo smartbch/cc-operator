@@ -2,18 +2,25 @@ package sbch
 
 import (
 	"fmt"
+	"time"
 )
 
-func InitRpcClients(nodesGovAddr, bootstrapRpcUrl string, minNodeCount int, skipPbkCheck bool) (*RpcClientsInfo, error) {
-	fmt.Println("InitRpcClients, nodesGovAddr:", nodesGovAddr, "bootstrapRpcUrl:", bootstrapRpcUrl, "minNodeCount:", minNodeCount)
+func InitRpcClients(nodesGovAddr, bootstrapRpcUrl string,
+	minNodeCount int, skipPbkCheck bool,
+	clientReqTimeout time.Duration,
+) (*RpcClientsInfo, error) {
 
-	bootstrapClient := NewSimpleRpcClient(nodesGovAddr, bootstrapRpcUrl)
+	fmt.Println("InitRpcClients, nodesGovAddr:", nodesGovAddr,
+		"bootstrapRpcUrl:", bootstrapRpcUrl, "minNodeCount:", minNodeCount)
+
+	bootstrapClient := NewSimpleRpcClient(nodesGovAddr, bootstrapRpcUrl, 0)
 	allNodes, err := bootstrapClient.GetSbchdNodes()
 	if err != nil {
 		return nil, err
 	}
 
-	clusterClient, validNodes, err := NewClusterRpcClientOfNodes(nodesGovAddr, allNodes, minNodeCount, skipPbkCheck)
+	clusterClient, validNodes, err := NewClusterRpcClientOfNodes(
+		nodesGovAddr, allNodes, minNodeCount, skipPbkCheck, clientReqTimeout)
 	if err != nil {
 		return nil, err
 	}

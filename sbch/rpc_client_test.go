@@ -110,7 +110,7 @@ func fakeServerLogic(reqStr string) ([]byte, error) {
 func TestGetNodeCount(t *testing.T) {
 	fakeServer := httptest.NewServer(http.HandlerFunc(fakeServerHandler))
 	defer fakeServer.Close()
-	c := NewSimpleRpcClient(testNodesGovAddr, fakeServer.URL)
+	c := NewSimpleRpcClient(testNodesGovAddr, fakeServer.URL, 0)
 	n, err := c.getNodeCount(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, uint64(3), n)
@@ -119,7 +119,7 @@ func TestGetNodeCount(t *testing.T) {
 func TestGetNodeByIdx(t *testing.T) {
 	fakeServer := httptest.NewServer(http.HandlerFunc(fakeServerHandler))
 	defer fakeServer.Close()
-	c := NewSimpleRpcClient(testNodesGovAddr, fakeServer.URL)
+	c := NewSimpleRpcClient(testNodesGovAddr, fakeServer.URL, 0)
 	node, err := c.getNodeByIdx(1, context.Background())
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), node.ID)
@@ -132,7 +132,7 @@ func TestGetSbchdNodes(t *testing.T) {
 	fakeServer := httptest.NewServer(http.HandlerFunc(fakeServerHandler))
 	defer fakeServer.Close()
 
-	c1 := NewSimpleRpcClient(testNodesGovAddr, fakeServer.URL)
+	c1 := NewSimpleRpcClient(testNodesGovAddr, fakeServer.URL, 0)
 	c2 := newClusterClient([]RpcClient{c1, c1})
 
 	for _, c := range []RpcClient{c1, c2} {
@@ -146,7 +146,7 @@ func TestGetRedeemingUtxoSigHashes(t *testing.T) {
 	fakeServer := httptest.NewServer(http.HandlerFunc(fakeServerHandler))
 	defer fakeServer.Close()
 
-	c1 := NewSimpleRpcClient(testNodesGovAddr, fakeServer.URL)
+	c1 := NewSimpleRpcClient(testNodesGovAddr, fakeServer.URL, 0)
 	c2 := newClusterClient([]RpcClient{c1, c1})
 
 	for _, c := range []RpcClient{c1, c2} {
@@ -160,7 +160,7 @@ func TestGetToBeConvertedUtxoSigHashes(t *testing.T) {
 	fakeServer := httptest.NewServer(http.HandlerFunc(fakeServerHandler))
 	defer fakeServer.Close()
 
-	c1 := NewSimpleRpcClient(testNodesGovAddr, fakeServer.URL)
+	c1 := NewSimpleRpcClient(testNodesGovAddr, fakeServer.URL, 0)
 	c2 := newClusterClient([]RpcClient{c1, c1})
 
 	for _, c := range []RpcClient{c1, c2} {

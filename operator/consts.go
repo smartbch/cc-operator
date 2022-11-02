@@ -15,6 +15,7 @@ const (
 	getSigHashesInterval = 5 * time.Second
 	checkNodesInterval   = 1 * time.Hour
 	newNodesDelayTime    = 6 * time.Hour
+	clientReqTimeout     = 5 * time.Minute
 
 	attestationProviderURL = "https://shareduks.uks.attest.azure.net"
 )

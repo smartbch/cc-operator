@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+	"time"
 )
 
 var _ RpcClient = (*ClusterClient)(nil)
@@ -14,12 +15,12 @@ type ClusterClient struct {
 }
 
 func NewClusterRpcClientOfNodes(nodesGovAddr string, nodes []NodeInfo,
-	minNodeCount int, skipPbkCheck bool) (RpcClient, []NodeInfo, error) {
+	minNodeCount int, skipPbkCheck bool, clientReqTimeout time.Duration) (RpcClient, []NodeInfo, error) {
 
 	okNodes := make([]NodeInfo, 0, len(nodes))
 	clients := make([]RpcClient, 0, len(nodes))
 	for _, node := range nodes {
-		client := NewSimpleRpcClient(nodesGovAddr, node.RpcUrl)
+		client := NewSimpleRpcClient(nodesGovAddr, node.RpcUrl, clientReqTimeout)
 		pbk, err := client.GetRpcPubkey()
 		if err != nil {
 			fmt.Println("failed to get pubkey from node:", node.RpcUrl, err)
