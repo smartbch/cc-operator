@@ -18,10 +18,3 @@ type NodeInfo struct {
 	RpcUrl  string       `json:"rpcUrl"`
 	Intro   string       `json:"intro"`
 }
-
-type RpcClientsInfo struct {
-	BootstrapRpcClient RpcClient
-	ClusterRpcClient   RpcClient
-	AllNodes           []NodeInfo
-	ValidNodes         []NodeInfo // used by clusterRpcClient
-}

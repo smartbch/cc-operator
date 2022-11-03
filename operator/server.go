@@ -19,15 +19,40 @@ import (
 	"github.com/smartbch/ccoperator/utils"
 )
 
-var certBytes []byte
-var suspended atomic.Value
-var monitorAddresses []gethcmn.Address
+const (
+	integrationTestMode = true // set this to false in production mode
+
+	attestationProviderURL = "https://shareduks.uks.attest.azure.net"
+)
+
+var (
+	certBytes        []byte
+	suspended        atomic.Value
+	monitorAddresses []gethcmn.Address
+)
 
 var (
 	errTsTooOld   = errors.New("ts too old")
 	errTsTooNew   = errors.New("ts too new")
 	errNotMonitor = errors.New("not monitor")
 )
+
+func Start(serverName, listenAddr, bootstrapRpcURL, nodesGovAddr, monitorAddrList string) {
+	loadOrGenKey()
+	initRpcClients(nodesGovAddr, bootstrapRpcURL, integrationTestMode)
+	go getAndSignSigHashes()
+	go watchSbchdNodes()
+	go startHttpsServer(serverName, listenAddr, monitorAddrList)
+	select {}
+}
+
+func loadOrGenKey() {
+	if integrationTestMode {
+		loadOrGenKeyNonEnclave()
+	} else {
+		loadOrGenKeyInEnclave()
+	}
+}
 
 func startHttpsServer(serverName, listenAddr, monitorAddrList string) {
 	for _, addr := range strings.Split(monitorAddrList, ",") {

@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/edgelesssys/ego/ecrypto"
@@ -12,10 +13,33 @@ import (
 	"github.com/smartbch/ccoperator/utils"
 )
 
-var privKey *bchec.PrivateKey
-var pubKeyBytes []byte // compressed
+const (
+	keyFile = "/data/key.txt"
+)
 
-func loadOrGenKey() {
+var (
+	privKey     *bchec.PrivateKey
+	pubKeyBytes []byte // compressed
+)
+
+// only used for testing
+func loadOrGenKeyNonEnclave() {
+	fileData, err := os.ReadFile(keyFile)
+	if err == nil {
+		privKey, _ = bchec.PrivKeyFromBytes(bchec.S256(), fileData)
+		pubKeyBytes = privKey.PubKey().SerializeCompressed()
+		return
+	}
+	if os.IsNotExist(err) {
+		genNewPrivKey()
+		_ = ioutil.WriteFile(keyFile, privKey.Serialize(), 0600)
+		pubKeyBytes = privKey.PubKey().SerializeCompressed()
+		return
+	}
+	panic(err)
+}
+
+func loadOrGenKeyInEnclave() {
 	fmt.Println("load private key from file:", keyFile)
 	fileData, err := os.ReadFile(keyFile)
 	if err != nil {
@@ -36,9 +60,7 @@ func loadOrGenKey() {
 
 func genAndSealPrivKey() {
 	genNewPrivKey()
-	if !integrationTestMode {
-		sealPrivKeyToFile()
-	}
+	sealPrivKeyToFile()
 }
 
 func genNewPrivKey() {

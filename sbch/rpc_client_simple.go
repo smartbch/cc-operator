@@ -30,13 +30,13 @@ type SimpleRpcClient struct {
 	reqTimeout    time.Duration
 }
 
-func NewSimpleRpcClient(nodesGovAddr, rpcUrl string, reqTimeout time.Duration) SimpleRpcClient {
+func NewSimpleRpcClient(nodesGovAddr, rpcUrl string, reqTimeout time.Duration) *SimpleRpcClient {
 	sbchRpcClient, err := sbchrpcclient.DialHTTP(rpcUrl)
 	if err != nil {
 		panic(err) // TODO: return error
 	}
 
-	return SimpleRpcClient{
+	return &SimpleRpcClient{
 		nodesGovAddr:  gethcmn.HexToAddress(nodesGovAddr),
 		sbchRpcClient: sbchRpcClient,
 		rpcUrl:        rpcUrl,
@@ -44,11 +44,11 @@ func NewSimpleRpcClient(nodesGovAddr, rpcUrl string, reqTimeout time.Duration) S
 	}
 }
 
-func (client SimpleRpcClient) RpcURL() string {
+func (client *SimpleRpcClient) RpcURL() string {
 	return client.rpcUrl
 }
 
-func (client SimpleRpcClient) GetSbchdNodes() ([]NodeInfo, error) {
+func (client *SimpleRpcClient) GetSbchdNodes() ([]NodeInfo, error) {
 	ctx := context.Background()
 	if client.reqTimeout > 0 {
 		var cancelFn context.CancelFunc
@@ -71,7 +71,7 @@ func (client SimpleRpcClient) GetSbchdNodes() ([]NodeInfo, error) {
 
 	return nodes, nil
 }
-func (client SimpleRpcClient) getNodeCount(ctx context.Context) (uint64, error) {
+func (client *SimpleRpcClient) getNodeCount(ctx context.Context) (uint64, error) {
 	callMsg := ethereum.CallMsg{
 		To:   &client.nodesGovAddr,
 		Data: gethcmn.FromHex(getNodeCountSel),
@@ -82,7 +82,7 @@ func (client SimpleRpcClient) getNodeCount(ctx context.Context) (uint64, error) 
 	}
 	return uint256.NewInt(0).SetBytes(nodeCountData).Uint64(), nil
 }
-func (client SimpleRpcClient) getNodeByIdx(n uint64, ctx context.Context) (node NodeInfo, err error) {
+func (client *SimpleRpcClient) getNodeByIdx(n uint64, ctx context.Context) (node NodeInfo, err error) {
 	callData := append(gethcmn.FromHex(getNodeByIdxSel), uint256.NewInt(n).PaddedBytes(32)...)
 	callMsg := ethereum.CallMsg{
 		To:   &client.nodesGovAddr,
@@ -105,7 +105,7 @@ func (client SimpleRpcClient) getNodeByIdx(n uint64, ctx context.Context) (node 
 	return
 }
 
-func (client SimpleRpcClient) GetRedeemingUtxoSigHashes() ([]string, error) {
+func (client *SimpleRpcClient) GetRedeemingUtxoSigHashes() ([]string, error) {
 	ctx := context.Background()
 	if client.reqTimeout > 0 {
 		var cancelFn context.CancelFunc
@@ -124,7 +124,7 @@ func (client SimpleRpcClient) GetRedeemingUtxoSigHashes() ([]string, error) {
 	}
 	return sigHashes, nil
 }
-func (client SimpleRpcClient) GetToBeConvertedUtxoSigHashes() ([]string, error) {
+func (client *SimpleRpcClient) GetToBeConvertedUtxoSigHashes() ([]string, error) {
 	ctx := context.Background()
 	if client.reqTimeout > 0 {
 		var cancelFn context.CancelFunc
@@ -144,7 +144,7 @@ func (client SimpleRpcClient) GetToBeConvertedUtxoSigHashes() ([]string, error) 
 	return sigHashes, nil
 }
 
-func (client SimpleRpcClient) GetRpcPubkey() ([]byte, error) {
+func (client *SimpleRpcClient) GetRpcPubkey() ([]byte, error) {
 	ctx := context.Background()
 	if client.reqTimeout > 0 {
 		var cancelFn context.CancelFunc

@@ -133,7 +133,7 @@ func TestGetSbchdNodes(t *testing.T) {
 	defer fakeServer.Close()
 
 	c1 := NewSimpleRpcClient(testNodesGovAddr, fakeServer.URL, 0)
-	c2 := newClusterClient([]RpcClient{c1, c1})
+	c2 := &ClusterClient{clients: []RpcClient{c1, c1}}
 
 	for _, c := range []RpcClient{c1, c2} {
 		nodes, err := c.GetSbchdNodes()
@@ -147,7 +147,7 @@ func TestGetRedeemingUtxoSigHashes(t *testing.T) {
 	defer fakeServer.Close()
 
 	c1 := NewSimpleRpcClient(testNodesGovAddr, fakeServer.URL, 0)
-	c2 := newClusterClient([]RpcClient{c1, c1})
+	c2 := &ClusterClient{clients: []RpcClient{c1, c1}}
 
 	for _, c := range []RpcClient{c1, c2} {
 		hashes, err := c.GetRedeemingUtxoSigHashes()
@@ -161,7 +161,7 @@ func TestGetToBeConvertedUtxoSigHashes(t *testing.T) {
 	defer fakeServer.Close()
 
 	c1 := NewSimpleRpcClient(testNodesGovAddr, fakeServer.URL, 0)
-	c2 := newClusterClient([]RpcClient{c1, c1})
+	c2 := &ClusterClient{clients: []RpcClient{c1, c1}}
 
 	for _, c := range []RpcClient{c1, c2} {
 		hashes, err := c.GetToBeConvertedUtxoSigHashes()

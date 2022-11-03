@@ -11,11 +11,13 @@ import (
 var _ RpcClient = (*ClusterClient)(nil)
 
 type ClusterClient struct {
-	clients []RpcClient
+	clients    []RpcClient
+	AllNodes   []NodeInfo
+	ValidNodes []NodeInfo
 }
 
 func NewClusterRpcClientOfNodes(nodesGovAddr string, nodes []NodeInfo,
-	minNodeCount int, skipPbkCheck bool, clientReqTimeout time.Duration) (RpcClient, []NodeInfo, error) {
+	minNodeCount int, skipPbkCheck bool, clientReqTimeout time.Duration) (*ClusterClient, error) {
 
 	okNodes := make([]NodeInfo, 0, len(nodes))
 	clients := make([]RpcClient, 0, len(nodes))
@@ -37,25 +39,25 @@ func NewClusterRpcClientOfNodes(nodesGovAddr string, nodes []NodeInfo,
 	}
 
 	if len(okNodes) < minNodeCount {
-		return nil, nil, fmt.Errorf("not enough nodes to connect")
+		return nil, fmt.Errorf("not enough nodes to connect")
 	}
 
-	return newClusterClient(clients), nodes, nil
+	return &ClusterClient{
+		clients:    clients,
+		AllNodes:   nodes,
+		ValidNodes: okNodes,
+	}, nil
 }
 
-func newClusterClient(clients []RpcClient) RpcClient {
-	return ClusterClient{clients: clients}
-}
-
-func (cluster ClusterClient) RpcURL() string {
+func (cluster *ClusterClient) RpcURL() string {
 	return "clusterRpcClient"
 }
 
-func (cluster ClusterClient) GetRpcPubkey() ([]byte, error) {
+func (cluster *ClusterClient) GetRpcPubkey() ([]byte, error) {
 	panic("not supported")
 }
 
-func (cluster ClusterClient) GetSbchdNodes() ([]NodeInfo, error) {
+func (cluster *ClusterClient) GetSbchdNodes() ([]NodeInfo, error) {
 	result, err := cluster.GetFromAllNodes("GetSbchdNodes")
 	if err != nil {
 		return nil, err
@@ -63,7 +65,7 @@ func (cluster ClusterClient) GetSbchdNodes() ([]NodeInfo, error) {
 	return result.([]NodeInfo), err
 }
 
-func (cluster ClusterClient) GetRedeemingUtxoSigHashes() ([]string, error) {
+func (cluster *ClusterClient) GetRedeemingUtxoSigHashes() ([]string, error) {
 	result, err := cluster.GetFromAllNodes("GetRedeemingUtxoSigHashes")
 	if err != nil {
 		return nil, err
@@ -71,7 +73,7 @@ func (cluster ClusterClient) GetRedeemingUtxoSigHashes() ([]string, error) {
 	return result.([]string), err
 }
 
-func (cluster ClusterClient) GetToBeConvertedUtxoSigHashes() ([]string, error) {
+func (cluster *ClusterClient) GetToBeConvertedUtxoSigHashes() ([]string, error) {
 	result, err := cluster.GetFromAllNodes("GetToBeConvertedUtxoSigHashes")
 	if err != nil {
 		return nil, err
@@ -79,7 +81,7 @@ func (cluster ClusterClient) GetToBeConvertedUtxoSigHashes() ([]string, error) {
 	return result.([]string), err
 }
 
-func (cluster ClusterClient) GetFromAllNodes(methodName string) (any, error) {
+func (cluster *ClusterClient) GetFromAllNodes(methodName string) (any, error) {
 	nClients := len(cluster.clients)
 	resps := make([]any, nClients)
 	errors := make([]error, nClients)

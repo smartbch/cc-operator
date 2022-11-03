@@ -12,36 +12,63 @@ import (
 	"github.com/smartbch/ccoperator/sbch"
 )
 
-var nodesGovAddr string
-var rpcClientsInfoLock sync.RWMutex
-var rpcClientsInfo *sbch.RpcClientsInfo
-var newRpcClientsInfo *sbch.RpcClientsInfo
-var nodesChangedTime time.Time
+const (
+	minNodeCount = 2
 
-var sigCache = gcache.New(sigCacheMaxCount).Expiration(sigCacheExpiration).Simple().Build()
+	sigCacheMaxCount   = 10000
+	sigCacheExpiration = 2 * time.Hour
 
-func initRpcClient(_nodesGovAddr, bootstrapRpcURL string) {
+	getSigHashesInterval = 5 * time.Second
+	checkNodesInterval   = 1 * time.Hour
+	newNodesDelayTime    = 6 * time.Hour
+	clientReqTimeout     = 5 * time.Minute
+)
+
+var (
+	nodesGovAddr      string
+	rpcClientLock     sync.RWMutex
+	bootstrapClient   *sbch.SimpleRpcClient
+	currClusterClient *sbch.ClusterClient
+	newClusterClient  *sbch.ClusterClient
+	nodesChangedTime  time.Time
+	skipNodeCert      bool
+
+	sigCache = gcache.New(sigCacheMaxCount).Expiration(sigCacheExpiration).Simple().Build()
+)
+
+func initRpcClients(_nodesGovAddr, bootstrapRpcURL string, _skipNodeCert bool) {
 	nodesGovAddr = _nodesGovAddr
+	skipNodeCert = _skipNodeCert
 
-	var err error
-	rpcClientsInfo, err = sbch.InitRpcClients(
-		nodesGovAddr, bootstrapRpcURL, minNodeCount, integrationTestMode, clientReqTimeout)
+	bootstrapClient = sbch.NewSimpleRpcClient(nodesGovAddr, bootstrapRpcURL, clientReqTimeout)
+	allNodes, err := bootstrapClient.GetSbchdNodes()
 	if err != nil {
 		panic(err)
 	}
+
+	clusterClient, err := sbch.NewClusterRpcClientOfNodes(
+		nodesGovAddr, allNodes, minNodeCount, skipNodeCert, clientReqTimeout)
+	if err != nil {
+		panic(err)
+	}
+
+	rpcClientLock.Lock()
+	currClusterClient = clusterClient
+	rpcClientLock.Unlock()
 }
 
+// run this in a goroutine
 func getAndSignSigHashes() {
 	fmt.Println("start to getAndSignSigHashes ...")
 	for {
 		time.Sleep(getSigHashesInterval)
 
-		rpcClientsInfoLock.RLock()
-		rpcClients := rpcClientsInfo.ClusterRpcClient
-		rpcClientsInfoLock.RUnlock()
+		rpcClientLock.RLock()
+		rpcClient := currClusterClient
+		rpcClientLock.RUnlock()
 
 		fmt.Println("GetRedeemingUtxoSigHashes ...")
-		redeemingUtxoSigHashes, err := rpcClients.GetRedeemingUtxoSigHashes()
+		redeemingUtxoSigHashes, err := rpcClient.GetRedeemingUtxoSigHashes()
 		if err != nil {
 			fmt.Println("can not get sig hashes:", err.Error())
 			continue
@@ -49,7 +76,7 @@ func getAndSignSigHashes() {
 		fmt.Println("sigHashes:", redeemingUtxoSigHashes)
 
 		fmt.Println("GetToBeConvertedUtxoSigHashes ...")
-		toBeConvertedUtxoSigHashes, err := rpcClients.GetToBeConvertedUtxoSigHashes()
+		toBeConvertedUtxoSigHashes, err := rpcClient.GetToBeConvertedUtxoSigHashes()
 		if err != nil {
 			fmt.Println("can not get sig hashes:", err.Error())
 			continue
@@ -77,56 +104,49 @@ func getAndSignSigHashes() {
 	}
 }
 
+// run this in a goroutine
 func watchSbchdNodes() {
 	fmt.Println("start to watchSbchdNodes ...")
 	// TODO: change to time.Ticker?
 	for {
 		time.Sleep(checkNodesInterval)
 
-		latestNodes, err := rpcClientsInfo.ClusterRpcClient.GetSbchdNodes()
+		latestNodes, err := currClusterClient.GetSbchdNodes()
 		if err != nil {
 			fmt.Println("failed to get sbchd nodes:", err.Error())
 			continue
 		}
 
 		if nodesChanged(latestNodes) {
-			newRpcClientsInfo = nil
-			clusterClient, validNodes, err := sbch.NewClusterRpcClientOfNodes(
-				nodesGovAddr, latestNodes, minNodeCount, integrationTestMode, clientReqTimeout)
+			newClusterClient = nil
+			clusterClient, err := sbch.NewClusterRpcClientOfNodes(
+				nodesGovAddr, latestNodes, minNodeCount, skipNodeCert, clientReqTimeout)
 			if err != nil {
 				fmt.Println("failed to check sbchd nodes:", err.Error())
 				continue
 			}
 
 			nodesChangedTime = time.Now()
-			newRpcClientsInfo = &sbch.RpcClientsInfo{
-				BootstrapRpcClient: rpcClientsInfo.BootstrapRpcClient,
-				ClusterRpcClient:   clusterClient,
-				AllNodes:           latestNodes,
-				ValidNodes:         validNodes,
-			}
-
+			newClusterClient = clusterClient
 			continue
 		}
 
-		if newRpcClientsInfo != nil {
+		if newClusterClient != nil {
 			if time.Now().Sub(nodesChangedTime) > newNodesDelayTime {
-				rpcClientsInfoLock.Lock()
-				rpcClientsInfo = newRpcClientsInfo
-				newRpcClientsInfo = nil
-				rpcClientsInfoLock.Unlock()
+				rpcClientLock.Lock()
+				currClusterClient = newClusterClient
+				newClusterClient = nil
+				rpcClientLock.Unlock()
 			}
 		}
 	}
 }
 
 func nodesChanged(latestNodes []sbch.NodeInfo) bool {
-	// second, compare with newRpcClientInfo.AllNodes
-	if newRpcClientsInfo != nil {
-		return nodesEqual(newRpcClientsInfo.AllNodes, latestNodes)
+	if newClusterClient != nil {
+		return nodesEqual(newClusterClient.AllNodes, latestNodes)
 	}
-	// first, compare with rpcClientInfo.AllNodes
-	return nodesEqual(rpcClientsInfo.AllNodes, latestNodes)
+	return nodesEqual(currClusterClient.AllNodes, latestNodes)
 }
 
 func nodesEqual(s1, s2 []sbch.NodeInfo) bool {
@@ -150,15 +170,15 @@ func getSig(sigHashHex string) []byte {
 }
 
 func getCurrNodes() []sbch.NodeInfo {
-	rpcClientsInfoLock.RLock()
-	defer rpcClientsInfoLock.RUnlock()
-	return rpcClientsInfo.AllNodes
+	rpcClientLock.RLock()
+	defer rpcClientLock.RUnlock()
+	return currClusterClient.AllNodes
 }
 func getNewNodes() []sbch.NodeInfo {
-	rpcClientsInfoLock.RLock()
-	defer rpcClientsInfoLock.RUnlock()
-	if newRpcClientsInfo == nil {
+	rpcClientLock.RLock()
+	defer rpcClientLock.RUnlock()
+	if newClusterClient == nil {
 		return nil
 	}
-	return newRpcClientsInfo.AllNodes
+	return newClusterClient.AllNodes
 }

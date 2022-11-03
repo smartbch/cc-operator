@@ -70,7 +70,7 @@ func TestHandleSig(t *testing.T) {
 	for _, path := range []string{"/sig?hash=0x4321", "/sig?hash=4321"} {
 		resp, err := callHandler(path)
 		require.NoError(t, err)
-		require.Equal(t, `{"success":false,"error":"no signature"}`, resp)
+		require.Equal(t, `{"success":false,"error":"no signature found"}`, resp)
 	}
 
 	for _, path := range []string{"/sig?hash=0x1234", "/sig?hash=1234"} {
@@ -81,8 +81,8 @@ func TestHandleSig(t *testing.T) {
 }
 
 func TestHandleCurrNodes(t *testing.T) {
-	oldRpcClientsInfo := rpcClientsInfo
-	rpcClientsInfo = &sbch.RpcClientsInfo{
+	_currClusterClient := currClusterClient
+	currClusterClient = &sbch.ClusterClient{
 		AllNodes: []sbch.NodeInfo{
 			{
 				ID:      1234,
@@ -92,7 +92,7 @@ func TestHandleCurrNodes(t *testing.T) {
 			},
 		},
 	}
-	defer func() { rpcClientsInfo = oldRpcClientsInfo }()
+	defer func() { currClusterClient = _currClusterClient }()
 
 	resp, err := callHandler("/nodes")
 	require.NoError(t, err)
@@ -102,8 +102,8 @@ func TestHandleCurrNodes(t *testing.T) {
 }
 
 func TestHandleNewNodes(t *testing.T) {
-	oldRpcClientsInfo := newRpcClientsInfo
-	newRpcClientsInfo = &sbch.RpcClientsInfo{
+	_newClusterClient := newClusterClient
+	newClusterClient = &sbch.ClusterClient{
 		AllNodes: []sbch.NodeInfo{
 			{
 				ID:      2345,
@@ -113,7 +113,7 @@ func TestHandleNewNodes(t *testing.T) {
 			},
 		},
 	}
-	defer func() { newRpcClientsInfo = oldRpcClientsInfo }()
+	defer func() { newClusterClient = _newClusterClient }()
 
 	resp, err := callHandler("/newNodes")
 	require.NoError(t, err)
