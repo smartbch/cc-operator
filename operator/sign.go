@@ -18,7 +18,7 @@ const (
 	sigCacheMaxCount   = 10000
 	sigCacheExpiration = 2 * time.Hour
 
-	getSigHashesInterval = 5 * time.Second
+	getSigHashesInterval = 3 * time.Second
 	checkNodesInterval   = 1 * time.Hour
 	newNodesDelayTime    = 6 * time.Hour
 	clientReqTimeout     = 5 * time.Minute
