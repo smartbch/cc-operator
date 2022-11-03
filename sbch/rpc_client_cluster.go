@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"sync"
 	"time"
+
+	sbchrpctypes "github.com/smartbch/smartbch/rpc/types"
 )
 
 var _ RpcClient = (*ClusterClient)(nil)
@@ -65,20 +67,33 @@ func (cluster *ClusterClient) GetSbchdNodes() ([]NodeInfo, error) {
 	return result.([]NodeInfo), err
 }
 
-func (cluster *ClusterClient) GetRedeemingUtxoSigHashes() ([]string, error) {
-	result, err := cluster.GetFromAllNodes("GetRedeemingUtxoSigHashes")
+func (cluster *ClusterClient) GetRedeemingUtxosForOperators() ([]*sbchrpctypes.UtxoInfo, error) {
+	result, err := cluster.GetFromAllNodes("GetRedeemingUtxosForOperators")
 	if err != nil {
 		return nil, err
 	}
-	return result.([]string), err
+	return result.([]*sbchrpctypes.UtxoInfo), err
 }
-
-func (cluster *ClusterClient) GetToBeConvertedUtxoSigHashes() ([]string, error) {
-	result, err := cluster.GetFromAllNodes("GetToBeConvertedUtxoSigHashes")
+func (cluster *ClusterClient) GetRedeemingUtxosForMonitors() ([]*sbchrpctypes.UtxoInfo, error) {
+	result, err := cluster.GetFromAllNodes("GetRedeemingUtxosForMonitors")
 	if err != nil {
 		return nil, err
 	}
-	return result.([]string), err
+	return result.([]*sbchrpctypes.UtxoInfo), err
+}
+func (cluster *ClusterClient) GetToBeConvertedUtxosForOperators() ([]*sbchrpctypes.UtxoInfo, error) {
+	result, err := cluster.GetFromAllNodes("GetToBeConvertedUtxosForOperators")
+	if err != nil {
+		return nil, err
+	}
+	return result.([]*sbchrpctypes.UtxoInfo), err
+}
+func (cluster *ClusterClient) GetToBeConvertedUtxosForMonitors() ([]*sbchrpctypes.UtxoInfo, error) {
+	result, err := cluster.GetFromAllNodes("GetToBeConvertedUtxosForMonitors")
+	if err != nil {
+		return nil, err
+	}
+	return result.([]*sbchrpctypes.UtxoInfo), err
 }
 
 func (cluster *ClusterClient) GetFromAllNodes(methodName string) (any, error) {
@@ -122,10 +137,14 @@ func getFromOneNode(client RpcClient, methodName string) (any, error) {
 	switch methodName {
 	case "GetSbchdNodes":
 		return client.GetSbchdNodes()
-	case "GetRedeemingUtxoSigHashes":
-		return client.GetRedeemingUtxoSigHashes()
-	case "GetToBeConvertedUtxoSigHashes":
-		return client.GetToBeConvertedUtxoSigHashes()
+	case "GetRedeemingUtxosForOperators":
+		return client.GetRedeemingUtxosForOperators()
+	case "GetRedeemingUtxosForMonitors":
+		return client.GetRedeemingUtxosForMonitors()
+	case "GetToBeConvertedUtxosForOperators":
+		return client.GetToBeConvertedUtxosForOperators()
+	case "GetToBeConvertedUtxosForMonitors":
+		return client.GetToBeConvertedUtxosForMonitors()
 	default:
 		panic("unknown method") // unreachable
 	}

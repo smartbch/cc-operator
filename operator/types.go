@@ -11,6 +11,13 @@ type Resp struct {
 	Result  any    `json:"result,omitempty"`
 }
 
+func NewResp(result any, err error) Resp {
+	if err != nil {
+		return NewErrResp(err.Error())
+	} else {
+		return NewOkResp(result)
+	}
+}
 func NewErrResp(err string) Resp {
 	return Resp{
 		Success: false,

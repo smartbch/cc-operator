@@ -150,9 +150,9 @@ func TestGetRedeemingUtxoSigHashes(t *testing.T) {
 	c2 := &ClusterClient{clients: []RpcClient{c1, c1}}
 
 	for _, c := range []RpcClient{c1, c2} {
-		hashes, err := c.GetRedeemingUtxoSigHashes()
+		utxos, err := c.GetRedeemingUtxosForOperators()
 		require.NoError(t, err)
-		require.Equal(t, hashes, []string{"17", "27"})
+		require.Len(t, utxos, 2)
 	}
 }
 
@@ -164,9 +164,9 @@ func TestGetToBeConvertedUtxoSigHashes(t *testing.T) {
 	c2 := &ClusterClient{clients: []RpcClient{c1, c1}}
 
 	for _, c := range []RpcClient{c1, c2} {
-		hashes, err := c.GetToBeConvertedUtxoSigHashes()
+		utxos, err := c.GetToBeConvertedUtxosForOperators()
 		require.NoError(t, err, c.RpcURL())
-		require.Equal(t, hashes, []string{"17", "27"})
+		require.Len(t, utxos, 2)
 	}
 }
 

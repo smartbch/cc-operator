@@ -90,6 +90,10 @@ func createHttpHandlers() *http.ServeMux {
 	mux.HandleFunc("/newNodes", handleNewNodes)
 	mux.HandleFunc("/suspend", handleSuspend)
 	mux.HandleFunc("/status", handleStatus)
+	mux.HandleFunc("/redeeming-utxos-for-operators", handleGetRedeemingUtxosForOperators)
+	mux.HandleFunc("/redeeming-utxos-for-monitors", handleGetRedeemingUtxosForMonitors)
+	mux.HandleFunc("/to-be-converted-utxos-for-operators", handleGetToBeConvertedUtxosForOperators)
+	mux.HandleFunc("/to-be-converted-utxos-for-monitors", handleGetToBeConvertedUtxosForMonitors)
 	return mux
 }
 
@@ -222,7 +226,6 @@ func handleSuspend(w http.ResponseWriter, r *http.Request) {
 	suspended.Store(true)
 	NewOkResp("ok").WriteTo(w)
 }
-
 func parseAndCheckTs(tsParam string) error {
 	ts, err := strconv.ParseInt(tsParam, 10, 64)
 	if err != nil {
@@ -238,7 +241,6 @@ func parseAndCheckTs(tsParam string) error {
 	}
 	return nil
 }
-
 func checkSig(ts, sig string) error {
 	hash, _ := gethacc.TextAndHash([]byte(ts))
 	//fmt.Println(msg)
@@ -255,6 +257,23 @@ func checkSig(ts, sig string) error {
 	}
 
 	return errNotMonitor
+}
+
+func handleGetRedeemingUtxosForOperators(w http.ResponseWriter, r *http.Request) {
+	utxos, err := currClusterClient.GetRedeemingUtxosForOperators()
+	NewResp(utxos, err).WriteTo(w)
+}
+func handleGetRedeemingUtxosForMonitors(w http.ResponseWriter, r *http.Request) {
+	utxos, err := currClusterClient.GetRedeemingUtxosForMonitors()
+	NewResp(utxos, err).WriteTo(w)
+}
+func handleGetToBeConvertedUtxosForOperators(w http.ResponseWriter, r *http.Request) {
+	utxos, err := currClusterClient.GetToBeConvertedUtxosForOperators()
+	NewResp(utxos, err).WriteTo(w)
+}
+func handleGetToBeConvertedUtxosForMonitors(w http.ResponseWriter, r *http.Request) {
+	utxos, err := currClusterClient.GetToBeConvertedUtxosForMonitors()
+	NewResp(utxos, err).WriteTo(w)
 }
 
 func getQueryParam(r *http.Request, name string) string {

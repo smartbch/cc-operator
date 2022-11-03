@@ -2,13 +2,16 @@ package sbch
 
 import (
 	gethcmn "github.com/ethereum/go-ethereum/common"
+	sbchrpctypes "github.com/smartbch/smartbch/rpc/types"
 )
 
 type RpcClient interface {
 	RpcURL() string
 	GetSbchdNodes() ([]NodeInfo, error)
-	GetRedeemingUtxoSigHashes() ([]string, error)
-	GetToBeConvertedUtxoSigHashes() ([]string, error)
+	GetRedeemingUtxosForOperators() ([]*sbchrpctypes.UtxoInfo, error)
+	GetRedeemingUtxosForMonitors() ([]*sbchrpctypes.UtxoInfo, error)
+	GetToBeConvertedUtxosForOperators() ([]*sbchrpctypes.UtxoInfo, error)
+	GetToBeConvertedUtxosForMonitors() ([]*sbchrpctypes.UtxoInfo, error)
 	GetRpcPubkey() ([]byte, error)
 }
 

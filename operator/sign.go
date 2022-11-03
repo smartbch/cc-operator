@@ -9,6 +9,9 @@ import (
 	"time"
 
 	"github.com/bluele/gcache"
+
+	sbchrpctypes "github.com/smartbch/smartbch/rpc/types"
+
 	"github.com/smartbch/ccoperator/sbch"
 )
 
@@ -68,7 +71,8 @@ func getAndSignSigHashes() {
 		rpcClientLock.RUnlock()
 
 		fmt.Println("GetRedeemingUtxoSigHashes ...")
-		redeemingUtxoSigHashes, err := rpcClient.GetRedeemingUtxoSigHashes()
+		redeemingUtxos, err := rpcClient.GetRedeemingUtxosForOperators()
+		redeemingUtxoSigHashes := utxosToSigHashes(redeemingUtxos)
 		if err != nil {
 			fmt.Println("can not get sig hashes:", err.Error())
 			continue
@@ -76,7 +80,8 @@ func getAndSignSigHashes() {
 		fmt.Println("sigHashes:", redeemingUtxoSigHashes)
 
 		fmt.Println("GetToBeConvertedUtxoSigHashes ...")
-		toBeConvertedUtxoSigHashes, err := rpcClient.GetToBeConvertedUtxoSigHashes()
+		toBeConvertedUtxos, err := rpcClient.GetToBeConvertedUtxosForOperators()
+		toBeConvertedUtxoSigHashes := utxosToSigHashes(toBeConvertedUtxos)
 		if err != nil {
 			fmt.Println("can not get sig hashes:", err.Error())
 			continue
@@ -102,6 +107,13 @@ func getAndSignSigHashes() {
 			}
 		}
 	}
+}
+func utxosToSigHashes(utxos []*sbchrpctypes.UtxoInfo) []string {
+	sigHashes := make([]string, len(utxos))
+	for i, utxoInfo := range utxos {
+		sigHashes[i] = hex.EncodeToString(utxoInfo.TxSigHash)
+	}
+	return sigHashes
 }
 
 // run this in a goroutine

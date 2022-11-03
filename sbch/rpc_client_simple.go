@@ -12,6 +12,7 @@ import (
 	"github.com/holiman/uint256"
 
 	sbchrpcclient "github.com/smartbch/smartbch/rpc/client"
+	sbchrpctypes "github.com/smartbch/smartbch/rpc/types"
 )
 
 const (
@@ -105,7 +106,7 @@ func (client *SimpleRpcClient) getNodeByIdx(n uint64, ctx context.Context) (node
 	return
 }
 
-func (client *SimpleRpcClient) GetRedeemingUtxoSigHashes() ([]string, error) {
+func (client *SimpleRpcClient) GetRedeemingUtxosForOperators() ([]*sbchrpctypes.UtxoInfo, error) {
 	ctx := context.Background()
 	if client.reqTimeout > 0 {
 		var cancelFn context.CancelFunc
@@ -117,14 +118,23 @@ func (client *SimpleRpcClient) GetRedeemingUtxoSigHashes() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	sigHashes := make([]string, len(utxoInfos.Infos))
-	for i, utxoInfo := range utxoInfos.Infos {
-		sigHashes[i] = hex.EncodeToString(utxoInfo.TxSigHash)
-	}
-	return sigHashes, nil
+	return utxoInfos.Infos, nil
 }
-func (client *SimpleRpcClient) GetToBeConvertedUtxoSigHashes() ([]string, error) {
+func (client *SimpleRpcClient) GetRedeemingUtxosForMonitors() ([]*sbchrpctypes.UtxoInfo, error) {
+	ctx := context.Background()
+	if client.reqTimeout > 0 {
+		var cancelFn context.CancelFunc
+		ctx, cancelFn = context.WithTimeout(ctx, client.reqTimeout)
+		defer cancelFn()
+	}
+
+	utxoInfos, err := client.sbchRpcClient.RedeemingUtxosForMonitors(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return utxoInfos.Infos, nil
+}
+func (client *SimpleRpcClient) GetToBeConvertedUtxosForOperators() ([]*sbchrpctypes.UtxoInfo, error) {
 	ctx := context.Background()
 	if client.reqTimeout > 0 {
 		var cancelFn context.CancelFunc
@@ -136,12 +146,21 @@ func (client *SimpleRpcClient) GetToBeConvertedUtxoSigHashes() ([]string, error)
 	if err != nil {
 		return nil, err
 	}
-
-	sigHashes := make([]string, len(utxoInfos.Infos))
-	for i, utxoInfo := range utxoInfos.Infos {
-		sigHashes[i] = hex.EncodeToString(utxoInfo.TxSigHash)
+	return utxoInfos.Infos, nil
+}
+func (client *SimpleRpcClient) GetToBeConvertedUtxosForMonitors() ([]*sbchrpctypes.UtxoInfo, error) {
+	ctx := context.Background()
+	if client.reqTimeout > 0 {
+		var cancelFn context.CancelFunc
+		ctx, cancelFn = context.WithTimeout(ctx, client.reqTimeout)
+		defer cancelFn()
 	}
-	return sigHashes, nil
+
+	utxoInfos, err := client.sbchRpcClient.ToBeConvertedUtxosForMonitors(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return utxoInfos.Infos, nil
 }
 
 func (client *SimpleRpcClient) GetRpcPubkey() ([]byte, error) {
