@@ -28,6 +28,12 @@ func TestHandleCert(t *testing.T) {
 		mustCallHandler("/cert"))
 }
 
+func TestHandleCertReport(t *testing.T) {
+	require.True(t, integrationTestMode)
+	require.Equal(t, `{"success":false,"error":"integration test mode"}`,
+		mustCallHandler("/cert-report"))
+}
+
 func TestHandlePubKey(t *testing.T) {
 	oldPubkeyBytes := pubKeyBytes
 	pubKeyBytes = []byte{0x12, 0x34}
@@ -37,16 +43,16 @@ func TestHandlePubKey(t *testing.T) {
 		mustCallHandler("/pubkey"))
 }
 
-func TestHandleReport(t *testing.T) {
+func TestHandlePubkeyReport(t *testing.T) {
 	require.True(t, integrationTestMode)
-	require.Equal(t, `{"success":false,"error":"integrationTestMode!"}`,
-		mustCallHandler("/report"))
+	require.Equal(t, `{"success":false,"error":"integration test mode"}`,
+		mustCallHandler("/pubkey-report"))
 }
 
 func TestHandleJwtToken(t *testing.T) {
 	require.True(t, integrationTestMode)
-	require.Equal(t, `{"success":false,"error":"integrationTestMode!"}`,
-		mustCallHandler("/jwt"))
+	require.Equal(t, `{"success":false,"error":"integration test mode"}`,
+		mustCallHandler("/pubkey-jwt"))
 }
 
 func TestHandleSig(t *testing.T) {

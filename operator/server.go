@@ -81,9 +81,10 @@ func startHttpsServer(serverName, listenAddr, monitorAddrList string) {
 func createHttpHandlers() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/cert", handleCert)
+	mux.HandleFunc("/cert-report", handleCertReport)
 	mux.HandleFunc("/pubkey", handlePubKey)
-	mux.HandleFunc("/report", handleReport)
-	mux.HandleFunc("/jwt", handleJwtToken)
+	mux.HandleFunc("/pubkey-report", handlePubkeyReport)
+	mux.HandleFunc("/pubkey-jwt", handlePubkeyJwt)
 	mux.HandleFunc("/sig", handleSig)
 	mux.HandleFunc("/nodes", handleCurrNodes)
 	mux.HandleFunc("/newNodes", handleNewNodes)
@@ -93,60 +94,58 @@ func createHttpHandlers() *http.ServeMux {
 }
 
 func handleCert(w http.ResponseWriter, r *http.Request) {
-	resp := Resp{
-		Success: true,
-		Result:  "0x" + hex.EncodeToString(certBytes),
+	NewOkResp("0x" + hex.EncodeToString(certBytes)).WriteTo(w)
+}
+
+func handleCertReport(w http.ResponseWriter, r *http.Request) {
+	if integrationTestMode {
+		NewErrResp("integration test mode").WriteTo(w)
+		return
 	}
-	resp.WriteTo(w)
+
+	certHash := sha256.Sum256(certBytes)
+	report, err := enclave.GetRemoteReport(certHash[:])
+	if err != nil {
+		NewErrResp(err.Error()).WriteTo(w)
+		return
+	}
+
+	NewOkResp("0x" + hex.EncodeToString(report)).WriteTo(w)
 }
 
 func handlePubKey(w http.ResponseWriter, r *http.Request) {
-	resp := Resp{
-		Success: true,
-		Result:  "0x" + hex.EncodeToString(pubKeyBytes),
-	}
-	resp.WriteTo(w)
+	NewOkResp("0x" + hex.EncodeToString(pubKeyBytes)).WriteTo(w)
 }
 
-func handleReport(w http.ResponseWriter, r *http.Request) {
-	var resp Resp
-
+func handlePubkeyReport(w http.ResponseWriter, r *http.Request) {
 	if integrationTestMode {
-		resp.Success = false
-		resp.Error = "integrationTestMode!"
-	} else {
-		hash := sha256.Sum256(pubKeyBytes)
-		report, err := enclave.GetRemoteReport(hash[:])
-		if err != nil {
-			resp.Success = false
-			resp.Error = err.Error()
-		} else {
-			resp.Success = true
-			resp.Result = "0x" + hex.EncodeToString(report)
-		}
+		NewErrResp("integration test mode").WriteTo(w)
+		return
 	}
 
-	resp.WriteTo(w)
+	pbkHash := sha256.Sum256(pubKeyBytes)
+	report, err := enclave.GetRemoteReport(pbkHash[:])
+	if err != nil {
+		NewErrResp(err.Error()).WriteTo(w)
+		return
+	}
+
+	NewOkResp("0x" + hex.EncodeToString(report)).WriteTo(w)
 }
 
-func handleJwtToken(w http.ResponseWriter, r *http.Request) {
-	var resp Resp
-
+func handlePubkeyJwt(w http.ResponseWriter, r *http.Request) {
 	if integrationTestMode {
-		resp.Success = false
-		resp.Error = "integrationTestMode!"
-	} else {
-		token, err := enclave.CreateAzureAttestationToken(pubKeyBytes, attestationProviderURL)
-		if err != nil {
-			resp.Success = false
-			resp.Error = err.Error()
-		} else {
-			resp.Success = true
-			resp.Result = json.RawMessage(token)
-		}
+		NewErrResp("integration test mode").WriteTo(w)
+		return
 	}
 
-	resp.WriteTo(w)
+	token, err := enclave.CreateAzureAttestationToken(pubKeyBytes, attestationProviderURL)
+	if err != nil {
+		NewErrResp(err.Error()).WriteTo(w)
+		return
+	}
+
+	NewOkResp(json.RawMessage(token)).WriteTo(w)
 }
 
 func handleSig(w http.ResponseWriter, r *http.Request) {
