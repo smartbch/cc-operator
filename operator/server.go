@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/edgelesssys/ego/enclave"
+	gethacc "github.com/ethereum/go-ethereum/accounts"
 	gethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 
@@ -22,7 +23,8 @@ import (
 const (
 	integrationTestMode = true // set this to false in production mode
 
-	attestationProviderURL = "https://shareduks.uks.attest.azure.net"
+	suspendTsDiffMaxSeconds = 60
+	attestationProviderURL  = "https://shareduks.uks.attest.azure.net"
 )
 
 var (
@@ -200,6 +202,15 @@ func handleSuspend(w http.ResponseWriter, r *http.Request) {
 	sig := getQueryParam(r, "sig")
 	ts := getQueryParam(r, "ts")
 
+	if sig == "" {
+		NewErrResp("missing query parameter: sig").WriteTo(w)
+		return
+	}
+	if ts == "" {
+		NewErrResp("missing query parameter: ts").WriteTo(w)
+		return
+	}
+
 	if err := parseAndCheckTs(ts); err != nil {
 		NewErrResp(err.Error()).WriteTo(w)
 		return
@@ -220,17 +231,18 @@ func parseAndCheckTs(tsParam string) error {
 	}
 
 	now := time.Now().Unix()
-	if now-ts > 60 {
+	if now-ts > suspendTsDiffMaxSeconds {
 		return errTsTooOld
 	}
-	if ts-now > 60 {
+	if ts-now > suspendTsDiffMaxSeconds {
 		return errTsTooNew
 	}
 	return nil
 }
 
 func checkSig(ts, sig string) error {
-	hash := sha256.Sum256([]byte(ts))
+	hash, _ := gethacc.TextAndHash([]byte(ts))
+	//fmt.Println(msg)
 	pbk, err := crypto.SigToPub(hash[:], gethcmn.FromHex(sig))
 	if err != nil {
 		return err
