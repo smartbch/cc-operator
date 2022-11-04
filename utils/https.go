@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"math/big"
+	"net/http"
 	"time"
 )
 
@@ -29,4 +30,12 @@ func CreateCertificate(serverName string) ([]byte, crypto.PrivateKey, tls.Config
 		},
 	}
 	return cert, priv, tlsCfg
+}
+
+func GetQueryParam(r *http.Request, name string) string {
+	params := r.URL.Query()[name]
+	if len(params) == 0 {
+		return ""
+	}
+	return params[0]
 }

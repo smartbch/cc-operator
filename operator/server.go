@@ -74,7 +74,7 @@ func startHttpsServer(serverName, listenAddr, monitorAddrList string) {
 		TLSConfig:    &tlsCfg,
 	}
 	fmt.Println("listening at:", listenAddr, "...")
-	err := server.ListenAndServe()
+	err := server.ListenAndServeTLS("", "")
 	fmt.Println(err)
 }
 
@@ -159,7 +159,7 @@ func handleSig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Println("handleSig:", r.URL.String())
-	hash := getQueryParam(r, "hash")
+	hash := utils.GetQueryParam(r, "hash")
 	if len(hash) == 0 {
 		NewErrResp("missing query parameter: hash").WriteTo(w)
 		return
@@ -167,7 +167,7 @@ func handleSig(w http.ResponseWriter, r *http.Request) {
 
 	sig, err := getSig(hash)
 	if err != nil {
-		NewErrResp("no signature found:"+err.Error()).WriteTo(w)
+		NewErrResp("no signature found:" + err.Error()).WriteTo(w)
 		return
 	}
 
@@ -202,8 +202,8 @@ func handleStatus(w http.ResponseWriter, r *http.Request) {
 
 // only monitors can call this
 func handleSuspend(w http.ResponseWriter, r *http.Request) {
-	sig := getQueryParam(r, "sig")
-	ts := getQueryParam(r, "ts")
+	sig := utils.GetQueryParam(r, "sig")
+	ts := utils.GetQueryParam(r, "ts")
 
 	if sig == "" {
 		NewErrResp("missing query parameter: sig").WriteTo(w)
@@ -274,12 +274,4 @@ func handleGetToBeConvertedUtxosForOperators(w http.ResponseWriter, r *http.Requ
 func handleGetToBeConvertedUtxosForMonitors(w http.ResponseWriter, r *http.Request) {
 	utxos, err := currClusterClient.GetToBeConvertedUtxosForMonitors()
 	NewResp(utxos, err).WriteTo(w)
-}
-
-func getQueryParam(r *http.Request, name string) string {
-	params := r.URL.Query()[name]
-	if len(params) == 0 {
-		return ""
-	}
-	return params[0]
 }

@@ -2,91 +2,57 @@ package proxy
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"time"
 
-	"github.com/smartbch/ccoperator/operator"
+	"github.com/smartbch/ccoperator/utils"
 )
 
-var baseOperatorUrl = "http://localhost:8801"
+func StartProxyServerWithCert(
+	baseOperatorUrl, listenAddr string,
+	certFile, keyFile string) {
 
-var pubKey *operator.Resp
-
-func startHttpServer(listenAddr string) {
-	mux := createHttpHandlers()
+	proxy := newProxy(baseOperatorUrl)
 	server := http.Server{
 		Addr:         listenAddr,
-		Handler:      mux,
+		Handler:      proxy,
 		ReadTimeout:  3 * time.Second,
 		WriteTimeout: 5 * time.Second,
 	}
-	fmt.Println("listening at:", listenAddr, "...")
-	err := server.ListenAndServe()
-	fmt.Println(err)
-}
-
-func createHttpHandlers() *http.ServeMux {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/pubkey", handlePubKey)
-	mux.HandleFunc("/report", handleReport)
-	mux.HandleFunc("/jwt", handleJwtToken)
-	mux.HandleFunc("/sig", handleSig)
-	mux.HandleFunc("/nodes", handleCurrNodes)
-	mux.HandleFunc("/newNodes", handleNewNodes)
-	return mux
-}
-
-func handlePubKey(w http.ResponseWriter, r *http.Request) {
-	if pubKey != nil {
-		pubKey.WriteTo(w)
-		return
-	}
-
-	resp := getFromOperator(baseOperatorUrl + "/pubkey")
-	if resp.Success {
-		pubKey = &resp
-		pubKey.WriteTo(w)
-		return
-	}
-	resp.WriteTo(w)
-}
-
-func handleReport(w http.ResponseWriter, r *http.Request) {
-	getFromOperator(baseOperatorUrl + "/report").WriteTo(w)
-}
-
-func handleJwtToken(w http.ResponseWriter, r *http.Request) {
-	getFromOperator(baseOperatorUrl + "/jwt").WriteTo(w)
-}
-
-func handleSig(w http.ResponseWriter, r *http.Request) {
-	hash := ""
-	if vals := r.URL.Query()["hash"]; len(vals) > 0 {
-		hash = vals[0]
-	}
-	getFromOperator(baseOperatorUrl + "/sig?hash=" + hash).WriteTo(w)
-}
-
-func handleCurrNodes(w http.ResponseWriter, r *http.Request) {
-	getFromOperator(baseOperatorUrl + "/nodes").WriteTo(w)
-}
-
-func handleNewNodes(w http.ResponseWriter, r *http.Request) {
-	getFromOperator(baseOperatorUrl + "/newNodes").WriteTo(w)
-}
-
-func getFromOperator(path string) operator.Resp {
-	resp, err := http.Get(baseOperatorUrl + path)
+	fmt.Println("cc-operator proxy listening at:", listenAddr, "...")
+	err := server.ListenAndServeTLS(certFile, keyFile)
 	if err != nil {
-		return operator.NewErrResp(err.Error())
+		panic(err)
 	}
+}
 
-	defer resp.Body.Close()
-	bytes, err := ioutil.ReadAll(resp.Body)
+func StartProxyServerWithName(baseOperatorUrl, listenAddr string,
+	serverName string) {
+
+	proxy := newProxy(baseOperatorUrl)
+	_, _, tlsCfg := utils.CreateCertificate(serverName)
+
+	server := http.Server{
+		Addr:         listenAddr,
+		Handler:      proxy,
+		ReadTimeout:  3 * time.Second,
+		WriteTimeout: 5 * time.Second,
+		TLSConfig:    &tlsCfg,
+	}
+	fmt.Println("cc-operator proxy listening at:", listenAddr, "...")
+	err := server.ListenAndServeTLS("", "")
 	if err != nil {
-		return operator.NewErrResp(err.Error())
+		panic(err)
+	}
+}
+
+func newProxy(targetHost string) *httputil.ReverseProxy {
+	targetUrl, err := url.Parse(targetHost)
+	if err != nil {
+		panic(err)
 	}
 
-	return operator.UnmarshalResp(bytes)
+	return httputil.NewSingleHostReverseProxy(targetUrl)
 }
