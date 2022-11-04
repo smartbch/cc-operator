@@ -165,9 +165,9 @@ func handleSig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sig := getSig(hash)
-	if sig == nil {
-		NewErrResp("no signature found").WriteTo(w)
+	sig, err := getSig(hash)
+	if err != nil {
+		NewErrResp("no signature found:"+err.Error()).WriteTo(w)
 		return
 	}
 

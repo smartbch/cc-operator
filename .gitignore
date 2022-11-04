@@ -17,3 +17,7 @@
 .idea/
 .DS_Store
 ccoperator
+*.swp
+*.un~
+*.h~
+*.go~

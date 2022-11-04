@@ -30,11 +30,3 @@ int rdrand_16(uint16_t* x, int retry)
 					return DRNG_NOT_READY;
 		}
 }
-
-// only SGX2 support
-uint64_t get_tsc()
-{
-    uint64_t a, d;
-    asm volatile("rdtsc" : "=a"(a), "=d"(d));
-    return (d << 32) | a;
-}

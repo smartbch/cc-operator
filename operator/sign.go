@@ -2,6 +2,8 @@ package operator
 
 import (
 	"encoding/hex"
+	"encoding/binary"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -13,18 +15,23 @@ import (
 	sbchrpctypes "github.com/smartbch/smartbch/rpc/types"
 
 	"github.com/smartbch/ccoperator/sbch"
+	"github.com/smartbch/ccoperator/utils"
 )
 
 const (
 	minNodeCount = 2
 
-	sigCacheMaxCount   = 10000
-	sigCacheExpiration = 2 * time.Hour
+	sigCacheMaxCount   = 100000
+	sigCacheExpiration = 24 * time.Hour
+	timeCacheMaxCount   = 200000
+	timeCacheExpiration = 24 * time.Hour
 
 	getSigHashesInterval = 3 * time.Second
 	checkNodesInterval   = 1 * time.Hour
 	newNodesDelayTime    = 6 * time.Hour
 	clientReqTimeout     = 5 * time.Minute
+
+	publicityPeriod = 6 * time.Hour //TODO
 )
 
 var (
@@ -37,6 +44,7 @@ var (
 	skipNodeCert      bool
 
 	sigCache = gcache.New(sigCacheMaxCount).Expiration(sigCacheExpiration).Simple().Build()
+	timeCache = gcache.New(timeCacheMaxCount).Expiration(sigCacheExpiration).Simple().Build()
 )
 
 func initRpcClients(_nodesGovAddr, bootstrapRpcURL string, _skipNodeCert bool) {
@@ -70,26 +78,26 @@ func getAndSignSigHashes() {
 		rpcClient := currClusterClient
 		rpcClientLock.RUnlock()
 
-		fmt.Println("GetRedeemingUtxoSigHashes ...")
-		redeemingUtxos, err := rpcClient.GetRedeemingUtxosForOperators()
-		redeemingUtxoSigHashes := utxosToSigHashes(redeemingUtxos)
+		fmt.Println("GetRedeemingUtxoSigHashes for Operators ...")
+		redeemingUtxos4Op, err := rpcClient.GetRedeemingUtxosForOperators()
+		redeemingUtxoSigHashes4Op := utxosToSigHashes(redeemingUtxos4Op)
 		if err != nil {
 			fmt.Println("can not get sig hashes:", err.Error())
 			continue
 		}
-		fmt.Println("sigHashes:", redeemingUtxoSigHashes)
+		fmt.Println("sigHashes:", redeemingUtxoSigHashes4Op)
 
-		fmt.Println("GetToBeConvertedUtxoSigHashes ...")
-		toBeConvertedUtxos, err := rpcClient.GetToBeConvertedUtxosForOperators()
-		toBeConvertedUtxoSigHashes := utxosToSigHashes(toBeConvertedUtxos)
+		fmt.Println("GetToBeConvertedUtxoSigHashes for Operators ...")
+		toBeConvertedUtxos4Op, err := rpcClient.GetToBeConvertedUtxosForOperators()
 		if err != nil {
 			fmt.Println("can not get sig hashes:", err.Error())
 			continue
 		}
-		fmt.Println("sigHashes:", toBeConvertedUtxoSigHashes)
+		toBeConvertedUtxoSigHashes4Op := utxosToSigHashes(toBeConvertedUtxos4Op)
+		fmt.Println("sigHashes:", toBeConvertedUtxoSigHashes4Op)
 
-		allSigHashes := append(redeemingUtxoSigHashes, toBeConvertedUtxoSigHashes...)
-		for _, sigHashHex := range allSigHashes {
+		allSigHashes4Op := append(redeemingUtxoSigHashes4Op, toBeConvertedUtxoSigHashes4Op...)
+		for _, sigHashHex := range allSigHashes4Op {
 			if sigCache.Has(sigHashHex) {
 				continue
 			}
@@ -106,8 +114,41 @@ func getAndSignSigHashes() {
 				fmt.Println("failed to put sig into cache:", err.Error())
 			}
 		}
+
+		fmt.Println("GetRedeemingUtxoSigHashes for Monitors ...")
+		redeemingUtxos4Mo, err := rpcClient.GetRedeemingUtxosForOperators()
+		redeemingUtxoSigHashes4Mo := utxosToSigHashes(redeemingUtxos4Mo)
+		if err != nil {
+			fmt.Println("can not get sig hashes:", err.Error())
+			continue
+		}
+		fmt.Println("sigHashes:", redeemingUtxoSigHashes4Mo)
+
+		fmt.Println("GetToBeConvertedUtxoSigHashes for Monitors ...")
+		toBeConvertedUtxos4Mo, err := rpcClient.GetToBeConvertedUtxosForOperators()
+		if err != nil {
+			fmt.Println("can not get sig hashes:", err.Error())
+			continue
+		}
+		toBeConvertedUtxoSigHashes4Mo := utxosToSigHashes(toBeConvertedUtxos4Mo)
+		fmt.Println("sigHashes:", toBeConvertedUtxoSigHashes4Mo)
+
+		allSigHashes4Mo := append(redeemingUtxoSigHashes4Mo, toBeConvertedUtxoSigHashes4Mo...)
+		var timestampBz [8]byte
+		binary.BigEndian.PutUint64(timestampBz[:], utils.GetTimestampFromTSC())
+		for _, sigHashHex := range allSigHashes4Mo {
+			if timeCache.Has(sigHashHex) {
+				continue
+			}
+
+			err = timeCache.SetWithExpire(sigHashHex, timestampBz, timeCacheExpiration)
+			if err != nil {
+				fmt.Println("failed to put sig into cache:", err.Error())
+			}
+		}
 	}
 }
+
 func utxosToSigHashes(utxos []*sbchrpctypes.UtxoInfo) []string {
 	sigHashes := make([]string, len(utxos))
 	for i, utxoInfo := range utxos {
@@ -165,20 +206,35 @@ func nodesEqual(s1, s2 []sbch.NodeInfo) bool {
 	return reflect.DeepEqual(s1, s2)
 }
 
-func getSig(sigHashHex string) []byte {
+func getSig(sigHashHex string) ([]byte, error) {
 	if strings.HasPrefix(sigHashHex, "0x") {
 		sigHashHex = sigHashHex[2:]
 	}
 
 	val, err := sigCache.Get(sigHashHex)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	if sig, ok := val.([]byte); ok {
-		return sig
+	timestampIfc, err := timeCache.Get(sigHashHex)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	timestampBz, ok := timestampIfc.([]byte)
+	if !ok {
+		return nil, errors.New("invalid cached timestamp")
+	}
+	okToSignTime := binary.BigEndian.Uint64(timestampBz) + uint64(publicityPeriod)
+	currentTime := utils.GetTimestampFromTSC()
+	if currentTime < okToSignTime { // Cannot Sign
+		return nil, errors.New("still too early to sign")
+	}
+
+	sig, ok := val.([]byte)
+	if !ok {
+		return nil, errors.New("invalid cached signature")
+	}
+	return sig, nil
 }
 
 func getCurrNodes() []sbch.NodeInfo {
