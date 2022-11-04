@@ -7,6 +7,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"fmt"
+	"io/ioutil"
 	"math/big"
 	"net/http"
 	"time"
@@ -38,4 +40,24 @@ func GetQueryParam(r *http.Request, name string) string {
 		return ""
 	}
 	return params[0]
+}
+
+func HttpsGet(tlsConfig *tls.Config, url string) []byte {
+	client := http.Client{Transport: &http.Transport{TLSClientConfig: tlsConfig}, Timeout: 3 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println(resp.Status)
+		return nil
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	return body
 }

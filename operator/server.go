@@ -98,6 +98,10 @@ func createHttpHandlers() *http.ServeMux {
 }
 
 func handleCert(w http.ResponseWriter, r *http.Request) {
+	if utils.GetQueryParam(r, "raw") != "" {
+		w.Write(certBytes)
+		return
+	}
 	NewOkResp("0x" + hex.EncodeToString(certBytes)).WriteTo(w)
 }
 
@@ -114,6 +118,10 @@ func handleCertReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if utils.GetQueryParam(r, "raw") != "" {
+		w.Write(report)
+		return
+	}
 	NewOkResp("0x" + hex.EncodeToString(report)).WriteTo(w)
 }
 
