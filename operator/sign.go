@@ -16,8 +16,6 @@ import (
 )
 
 const (
-	minNodeCount = 2
-
 	sigCacheMaxCount    = 100000
 	sigCacheExpiration  = 24 * time.Hour
 	timeCacheMaxCount   = 200000
@@ -56,7 +54,7 @@ func initRpcClients(_nodesGovAddr, bootstrapRpcURL string, _skipNodeCert bool) {
 	}
 
 	clusterClient, err := sbch.NewClusterRpcClientOfNodes(
-		nodesGovAddr, allNodes, minNodeCount, skipNodeCert, clientReqTimeout)
+		nodesGovAddr, allNodes, len(allNodes), skipNodeCert, clientReqTimeout)
 	if err != nil {
 		panic(err)
 	}
@@ -67,7 +65,7 @@ func initRpcClients(_nodesGovAddr, bootstrapRpcURL string, _skipNodeCert bool) {
 	}
 
 	if !nodesEqual(latestNodes, allNodes) {
-		panic("Invalid Bootstrap Client");
+		panic("Invalid Bootstrap Client")
 	}
 
 	rpcClientLock.Lock()
@@ -218,7 +216,7 @@ func watchSbchdNodes() {
 		if nodesChanged(latestNodes) {
 			newClusterClient = nil
 			clusterClient, err := sbch.NewClusterRpcClientOfNodes(
-				nodesGovAddr, latestNodes, minNodeCount, skipNodeCert, clientReqTimeout)
+				nodesGovAddr, latestNodes, len(latestNodes), skipNodeCert, clientReqTimeout)
 			if err != nil {
 				fmt.Println("failed to check sbchd nodes:", err.Error())
 				continue

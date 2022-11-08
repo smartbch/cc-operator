@@ -41,7 +41,7 @@ func NewClusterRpcClientOfNodes(nodesGovAddr string, nodes []NodeInfo,
 	}
 
 	if len(okNodes) < minNodeCount {
-		return nil, fmt.Errorf("not enough nodes to connect")
+		return nil, fmt.Errorf("not enough valid nodes to connect")
 	}
 
 	return &ClusterClient{
