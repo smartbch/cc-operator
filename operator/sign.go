@@ -2,7 +2,6 @@ package operator
 
 import (
 	"encoding/hex"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"reflect"
@@ -12,8 +11,6 @@ import (
 
 	"github.com/bluele/gcache"
 
-	sbchrpctypes "github.com/smartbch/smartbch/rpc/types"
-
 	"github.com/smartbch/ccoperator/sbch"
 	"github.com/smartbch/ccoperator/utils"
 )
@@ -21,8 +18,8 @@ import (
 const (
 	minNodeCount = 2
 
-	sigCacheMaxCount   = 100000
-	sigCacheExpiration = 24 * time.Hour
+	sigCacheMaxCount    = 100000
+	sigCacheExpiration  = 24 * time.Hour
 	timeCacheMaxCount   = 200000
 	timeCacheExpiration = 24 * time.Hour
 
@@ -31,7 +28,8 @@ const (
 	newNodesDelayTime    = 6 * time.Hour
 	clientReqTimeout     = 5 * time.Minute
 
-	publicityPeriod = 6 * time.Hour //TODO
+	redeemPublicityPeriod  = 25 * time.Minute
+	convertPublicityPeriod = 100 * time.Minute
 )
 
 var (
@@ -43,7 +41,7 @@ var (
 	nodesChangedTime  time.Time
 	skipNodeCert      bool
 
-	sigCache = gcache.New(sigCacheMaxCount).Expiration(sigCacheExpiration).Simple().Build()
+	sigCache  = gcache.New(sigCacheMaxCount).Expiration(sigCacheExpiration).Simple().Build()
 	timeCache = gcache.New(timeCacheMaxCount).Expiration(sigCacheExpiration).Simple().Build()
 )
 
@@ -87,83 +85,121 @@ func getAndSignSigHashes() {
 		rpcClient := currClusterClient
 		rpcClientLock.RUnlock()
 
-		fmt.Println("GetRedeemingUtxoSigHashes for Operators ...")
-		redeemingUtxos4Op, err := rpcClient.GetRedeemingUtxosForOperators()
-		redeemingUtxoSigHashes4Op := utxosToSigHashes(redeemingUtxos4Op)
+		allSigHashes4Op, err := getAllSigHashes4Op(rpcClient)
 		if err != nil {
-			fmt.Println("can not get sig hashes:", err.Error())
 			continue
 		}
-		fmt.Println("sigHashes:", redeemingUtxoSigHashes4Op)
+		signSigHashes4Op(allSigHashes4Op)
 
-		fmt.Println("GetToBeConvertedUtxoSigHashes for Operators ...")
-		toBeConvertedUtxos4Op, err := rpcClient.GetToBeConvertedUtxosForOperators()
+		redeemingSigHashes4Mo, toBeConvertedSigHashes4Mo, err := getAllSigHashes4Mo(rpcClient)
 		if err != nil {
-			fmt.Println("can not get sig hashes:", err.Error())
 			continue
 		}
-		toBeConvertedUtxoSigHashes4Op := utxosToSigHashes(toBeConvertedUtxos4Op)
-		fmt.Println("sigHashes:", toBeConvertedUtxoSigHashes4Op)
+		cacheSigHashes4Mo(redeemingSigHashes4Mo, toBeConvertedSigHashes4Mo)
+	}
+}
 
-		allSigHashes4Op := append(redeemingUtxoSigHashes4Op, toBeConvertedUtxoSigHashes4Op...)
-		for _, sigHashHex := range allSigHashes4Op {
-			if sigCache.Has(sigHashHex) {
-				continue
-			}
+func getAllSigHashes4Op(rpcClient *sbch.ClusterClient) ([]string, error) {
+	fmt.Println("call GetRedeemingUtxosForOperators ...")
+	redeemingUtxos4Op, err := rpcClient.GetRedeemingUtxosForOperators()
+	if err != nil {
+		fmt.Println("failed to call GetRedeemingUtxosForOperators:", err.Error())
+		return nil, err
+	}
 
-			sigBytes, err := signSigHashECDSA(sigHashHex)
-			if err != nil {
-				fmt.Println("failed to sign sighash:", err.Error())
-				continue
-			}
+	fmt.Println("call GetToBeConvertedUtxosForOperators ...")
+	toBeConvertedUtxos4Op, err := rpcClient.GetToBeConvertedUtxosForOperators()
+	if err != nil {
+		fmt.Println("failed to call GetToBeConvertedUtxosForOperators:", err.Error())
+		return nil, err
+	}
 
-			fmt.Println("sigHash:", sigHashHex, "sig:", hex.EncodeToString(sigBytes))
-			err = sigCache.SetWithExpire(sigHashHex, sigBytes, sigCacheExpiration)
-			if err != nil {
-				fmt.Println("failed to put sig into cache:", err.Error())
-			}
-		}
+	sigHashes := make([]string, 0, len(redeemingUtxos4Op)+len(toBeConvertedUtxos4Op))
+	for _, utxo := range redeemingUtxos4Op {
+		sigHashes = append(sigHashes, hex.EncodeToString(utxo.TxSigHash))
+	}
+	for _, utxo := range toBeConvertedUtxos4Op {
+		sigHashes = append(sigHashes, hex.EncodeToString(utxo.TxSigHash))
+	}
+	fmt.Println("allSigHashes4Op:", sigHashes)
+	return sigHashes, nil
+}
 
-		fmt.Println("GetRedeemingUtxoSigHashes for Monitors ...")
-		redeemingUtxos4Mo, err := rpcClient.GetRedeemingUtxosForOperators()
-		redeemingUtxoSigHashes4Mo := utxosToSigHashes(redeemingUtxos4Mo)
-		if err != nil {
-			fmt.Println("can not get sig hashes:", err.Error())
+func getAllSigHashes4Mo(rpcClient *sbch.ClusterClient) ([]string, []string, error) {
+	fmt.Println("call GetRedeemingUtxosForMonitors ...")
+	redeemingUtxos4Mo, err := rpcClient.GetRedeemingUtxosForMonitors()
+	if err != nil {
+		fmt.Println("failed to call GetRedeemingUtxosForOperators:", err.Error())
+		return nil, nil, err
+	}
+
+	fmt.Println("call GetToBeConvertedUtxosForMonitors ...")
+	toBeConvertedUtxos4Mo, err := rpcClient.GetToBeConvertedUtxosForMonitors()
+	if err != nil {
+		fmt.Println("failed to call GetToBeConvertedUtxosForMonitors:", err.Error())
+		return nil, nil, err
+	}
+
+	redeemingSigHashes := make([]string, len(redeemingUtxos4Mo))
+	for i, utxo := range redeemingUtxos4Mo {
+		redeemingSigHashes[i] = hex.EncodeToString(utxo.TxSigHash)
+	}
+	fmt.Println("redeemingSigHashes4Mo:", redeemingSigHashes)
+
+	toBeConvertedSigHashes := make([]string, len(toBeConvertedUtxos4Mo))
+	for i, utxo := range toBeConvertedUtxos4Mo {
+		toBeConvertedSigHashes[i] = hex.EncodeToString(utxo.TxSigHash)
+	}
+	fmt.Println("toBeConvertedSigHashes4Mo:", toBeConvertedSigHashes)
+	return redeemingSigHashes, toBeConvertedSigHashes, nil
+}
+
+func signSigHashes4Op(allSigHashes4Op []string) {
+	for _, sigHashHex := range allSigHashes4Op {
+		if sigCache.Has(sigHashHex) {
 			continue
 		}
-		fmt.Println("sigHashes:", redeemingUtxoSigHashes4Mo)
 
-		fmt.Println("GetToBeConvertedUtxoSigHashes for Monitors ...")
-		toBeConvertedUtxos4Mo, err := rpcClient.GetToBeConvertedUtxosForOperators()
+		sigBytes, err := signSigHashECDSA(sigHashHex)
 		if err != nil {
-			fmt.Println("can not get sig hashes:", err.Error())
+			fmt.Println("failed to sign sigHash:", err.Error())
 			continue
 		}
-		toBeConvertedUtxoSigHashes4Mo := utxosToSigHashes(toBeConvertedUtxos4Mo)
-		fmt.Println("sigHashes:", toBeConvertedUtxoSigHashes4Mo)
 
-		allSigHashes4Mo := append(redeemingUtxoSigHashes4Mo, toBeConvertedUtxoSigHashes4Mo...)
-		var timestampBz [8]byte
-		binary.BigEndian.PutUint64(timestampBz[:], utils.GetTimestampFromTSC())
-		for _, sigHashHex := range allSigHashes4Mo {
-			if timeCache.Has(sigHashHex) {
-				continue
-			}
-
-			err = timeCache.SetWithExpire(sigHashHex, timestampBz, timeCacheExpiration)
-			if err != nil {
-				fmt.Println("failed to put sig into cache:", err.Error())
-			}
+		fmt.Println("sigHash:", sigHashHex, "sig:", hex.EncodeToString(sigBytes))
+		err = sigCache.SetWithExpire(sigHashHex, sigBytes, sigCacheExpiration)
+		if err != nil {
+			fmt.Println("failed to put sig into cache:", err.Error())
 		}
 	}
 }
 
-func utxosToSigHashes(utxos []*sbchrpctypes.UtxoInfo) []string {
-	sigHashes := make([]string, len(utxos))
-	for i, utxoInfo := range utxos {
-		sigHashes[i] = hex.EncodeToString(utxoInfo.TxSigHash)
+func cacheSigHashes4Mo(redeemingSigHashes4Mo, toBeConvertedSigHashes4Mo []string) {
+	ts := utils.GetTimestampFromTSC()
+
+	redeemOkTs := ts + uint64(redeemPublicityPeriod)
+	for _, sigHashHex := range redeemingSigHashes4Mo {
+		if timeCache.Has(sigHashHex) {
+			continue
+		}
+
+		err := timeCache.SetWithExpire(sigHashHex, redeemOkTs, timeCacheExpiration)
+		if err != nil {
+			fmt.Println("failed to put sigHash into cache:", err.Error())
+		}
 	}
-	return sigHashes
+
+	convertOkTs := ts + uint64(convertPublicityPeriod)
+	for _, sigHashHex := range toBeConvertedSigHashes4Mo {
+		if timeCache.Has(sigHashHex) {
+			continue
+		}
+
+		err := timeCache.SetWithExpire(sigHashHex, convertOkTs, timeCacheExpiration)
+		if err != nil {
+			fmt.Println("failed to put sigHash into cache:", err.Error())
+		}
+	}
 }
 
 // run this in a goroutine
@@ -229,11 +265,10 @@ func getSig(sigHashHex string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	timestampBz, ok := timestampIfc.([]byte)
+	okToSignTime, ok := timestampIfc.(uint64)
 	if !ok {
 		return nil, errors.New("invalid cached timestamp")
 	}
-	okToSignTime := binary.BigEndian.Uint64(timestampBz) + uint64(publicityPeriod)
 	currentTime := utils.GetTimestampFromTSC()
 	if currentTime < okToSignTime { // Cannot Sign
 		return nil, errors.New("still too early to sign")
