@@ -63,6 +63,15 @@ func initRpcClients(_nodesGovAddr, bootstrapRpcURL string, _skipNodeCert bool) {
 		panic(err)
 	}
 
+	latestNodes, err := currClusterClient.GetSbchdNodes()
+	if err != nil {
+		panic(err)
+	}
+
+	if !nodesEqual(latestNodes, allNodes) {
+		panic("Invalid Bootstrap Client");
+	}
+
 	rpcClientLock.Lock()
 	currClusterClient = clusterClient
 	rpcClientLock.Unlock()
