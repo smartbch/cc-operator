@@ -1,10 +1,12 @@
 package operator
 
 import (
+	"bytes"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -64,6 +66,7 @@ func initRpcClients(_nodesGovAddr, bootstrapRpcURL string, _skipNodeCert bool) {
 		panic(err)
 	}
 
+	sortNodes(latestNodes)
 	if !nodesEqual(latestNodes, allNodes) {
 		panic("Invalid Bootstrap Client")
 	}
@@ -213,6 +216,7 @@ func watchSbchdNodes() {
 			continue
 		}
 
+		sortNodes(latestNodes)
 		if nodesChanged(latestNodes) {
 			newClusterClient = nil
 			clusterClient, err := sbch.NewClusterRpcClientOfNodes(
@@ -236,6 +240,12 @@ func watchSbchdNodes() {
 			}
 		}
 	}
+}
+
+func sortNodes(nodes []sbch.NodeInfo) {
+	sort.Slice(nodes, func(i, j int) bool {
+		return bytes.Compare(nodes[i].PbkHash[:], nodes[j].PbkHash[:]) < 0
+	})
 }
 
 func nodesChanged(latestNodes []sbch.NodeInfo) bool {
