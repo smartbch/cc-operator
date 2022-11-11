@@ -55,6 +55,7 @@ func initRpcClients(_nodesGovAddr, bootstrapRpcURL string, _skipNodeCert bool) {
 		panic(err)
 	}
 
+	sortNodes(allNodes)
 	clusterClient, err := sbch.NewClusterRpcClientOfNodes(
 		nodesGovAddr, allNodes, len(allNodes), skipNodeCert, clientReqTimeout)
 	if err != nil {
