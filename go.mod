@@ -8,7 +8,7 @@ require (
 	github.com/ethereum/go-ethereum v1.10.7
 	github.com/gcash/bchd v0.19.0
 	github.com/holiman/uint256 v1.2.0
-	github.com/smartbch/smartbch v0.4.5-0.20221101071911-5b63954b6b73
+	github.com/smartbch/smartbch v0.4.5-0.20221111074802-da67a908246f
 	github.com/stretchr/testify v1.7.0
 )
 

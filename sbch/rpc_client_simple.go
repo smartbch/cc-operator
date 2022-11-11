@@ -171,5 +171,10 @@ func (client *SimpleRpcClient) GetRpcPubkey() ([]byte, error) {
 		defer cancelFn()
 	}
 
-	return client.sbchRpcClient.GetRpcPubkey(ctx)
+	_, err := client.sbchRpcClient.CcInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.sbchRpcClient.CachedRpcPubkey(), nil
 }
