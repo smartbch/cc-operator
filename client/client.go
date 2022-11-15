@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -38,6 +39,17 @@ func (client *Client) GetNodes() ([]sbch.NodeInfo, error) {
 	return nodes, err
 }
 
+func (client *Client) GetNewNodes() ([]sbch.NodeInfo, error) {
+	var nodes []sbch.NodeInfo
+	err := client.httpGet(context.Background(), "/newNodes", &nodes)
+	return nodes, err
+}
+
+func (client *Client) Suspend(sig string, ts int64) error {
+	pathAndQuery := fmt.Sprintf("/suspend?sig=%s&ts=%d", sig, ts)
+	return client.httpGet(context.Background(), pathAndQuery, nil)
+}
+
 func (client *Client) httpGet(ctx context.Context, pathAndQuery string, result any) error {
 	req, err := http.NewRequestWithContext(ctx, "GET", client.rpcUrl+pathAndQuery, nil)
 	if err != nil {
@@ -65,9 +77,11 @@ func (client *Client) httpGet(ctx context.Context, pathAndQuery string, result a
 		return errors.New(respObj.Error)
 	}
 
-	err = json.Unmarshal(respObj.Result, result)
-	if err != nil {
-		return err
+	if result != nil {
+		err = json.Unmarshal(respObj.Result, result)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
