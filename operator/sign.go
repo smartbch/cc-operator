@@ -13,8 +13,8 @@ import (
 
 	"github.com/bluele/gcache"
 
-	"github.com/smartbch/ccoperator/sbch"
-	"github.com/smartbch/ccoperator/utils"
+	"github.com/smartbch/cc-operator/sbch"
+	"github.com/smartbch/cc-operator/utils"
 )
 
 const (

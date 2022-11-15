@@ -16,8 +16,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartbch/ccoperator/sbch"
-	"github.com/smartbch/ccoperator/utils"
+	"github.com/smartbch/cc-operator/sbch"
+	"github.com/smartbch/cc-operator/utils"
 )
 
 func TestHandleCert(t *testing.T) {

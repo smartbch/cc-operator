@@ -18,7 +18,7 @@ import (
 	"github.com/edgelesssys/ego/attestation"
 	"github.com/edgelesssys/ego/eclient"
 
-	"github.com/smartbch/ccoperator/utils"
+	"github.com/smartbch/cc-operator/utils"
 )
 
 func StartProxyServerWithCert(

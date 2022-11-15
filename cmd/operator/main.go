@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 
-	"github.com/smartbch/ccoperator/operator"
+	"github.com/smartbch/cc-operator/operator"
 )
 
 var (

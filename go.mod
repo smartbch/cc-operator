@@ -1,4 +1,4 @@
-module github.com/smartbch/ccoperator
+module github.com/smartbch/cc-operator
 
 go 1.18
 

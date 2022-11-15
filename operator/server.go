@@ -17,7 +17,7 @@ import (
 	gethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 
-	"github.com/smartbch/ccoperator/utils"
+	"github.com/smartbch/cc-operator/utils"
 )
 
 const (

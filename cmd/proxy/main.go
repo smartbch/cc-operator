@@ -4,7 +4,7 @@ import (
 	"flag"
 
 	gethcmn "github.com/ethereum/go-ethereum/common"
-	"github.com/smartbch/ccoperator/proxy"
+	"github.com/smartbch/cc-operator/proxy"
 )
 
 var (

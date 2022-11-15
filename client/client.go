@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/smartbch/ccoperator/sbch"
+	"github.com/smartbch/cc-operator/sbch"
 )
 
 type OpResp struct {

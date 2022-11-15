@@ -10,7 +10,7 @@ import (
 	"github.com/edgelesssys/ego/ecrypto"
 	gethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/gcash/bchd/bchec"
-	"github.com/smartbch/ccoperator/utils"
+	"github.com/smartbch/cc-operator/utils"
 )
 
 const (
