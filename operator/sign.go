@@ -24,7 +24,7 @@ const (
 	timeCacheExpiration = 24 * time.Hour
 
 	getSigHashesInterval = 3 * time.Second
-	checkNodesInterval   = 1 * time.Hour
+	checkNodesInterval   = 6 * time.Minute
 	newNodesDelayTime    = 6 * time.Hour
 	clientReqTimeout     = 5 * time.Minute
 

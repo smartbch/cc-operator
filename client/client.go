@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/smartbch/cc-operator/sbch"
+	sbchrpctypes "github.com/smartbch/smartbch/rpc/types"
 )
 
 type OpResp struct {
@@ -43,6 +44,26 @@ func (client *Client) GetNewNodes() ([]sbch.NodeInfo, error) {
 	var nodes []sbch.NodeInfo
 	err := client.httpGet(context.Background(), "/newNodes", &nodes)
 	return nodes, err
+}
+
+func (client *Client) GetRedeemingUtxosForOperators() (utxoList []*sbchrpctypes.UtxoInfo, err error) {
+	err = client.httpGet(context.Background(), "/redeeming-utxos-for-operators", &utxoList)
+	return
+}
+
+func (client *Client) GetRedeemingUtxosForMonitors() (utxoList []*sbchrpctypes.UtxoInfo, err error) {
+	err = client.httpGet(context.Background(), "/redeeming-utxos-for-monitors", &utxoList)
+	return
+}
+
+func (client *Client) GetToBeConvertedUtxosForOperators() (utxoList []*sbchrpctypes.UtxoInfo, err error) {
+	err = client.httpGet(context.Background(), "/to-be-converted-utxos-for-operators", &utxoList)
+	return
+}
+
+func (client *Client) GetToBeConvertedUtxosForMonitors() (utxoList []*sbchrpctypes.UtxoInfo, err error) {
+	err = client.httpGet(context.Background(), "/to-be-converted-utxos-for-monitors", &utxoList)
+	return
 }
 
 func (client *Client) Suspend(sig string, ts int64) error {
