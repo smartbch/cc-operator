@@ -41,7 +41,7 @@ var (
 
 func Start(serverName, listenAddr, bootstrapRpcURL, nodesGovAddr, monitorAddrList string) {
 	loadOrGenKey()
-	initRpcClients(nodesGovAddr, bootstrapRpcURL, integrationTestMode)
+	initRpcClients(nodesGovAddr, bootstrapRpcURL, false)
 	go getAndSignSigHashes()
 	go watchSbchdNodes()
 	go startHttpsServer(serverName, listenAddr, monitorAddrList)
