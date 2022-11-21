@@ -62,7 +62,7 @@ func initRpcClients(_nodesGovAddr, bootstrapRpcURL string, _skipPbkCheck bool) {
 		panic(err)
 	}
 
-	latestNodes, err := currClusterClient.GetSbchdNodes()
+	latestNodes, err := clusterClient.GetSbchdNodes()
 	if err != nil {
 		panic(err)
 	}
