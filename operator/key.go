@@ -10,6 +10,8 @@ import (
 	"github.com/edgelesssys/ego/ecrypto"
 	gethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/gcash/bchd/bchec"
+	"github.com/gcash/bchutil"
+
 	"github.com/smartbch/cc-operator/utils"
 )
 
@@ -21,6 +23,17 @@ var (
 	privKey     *bchec.PrivateKey
 	pubKeyBytes []byte // compressed
 )
+
+// only used for testing
+func loadKeyFromWIF(wifStr string) {
+	wif, err := bchutil.DecodeWIF(wifStr)
+	if err != nil {
+		panic(err)
+	}
+
+	privKey = wif.PrivKey
+	pubKeyBytes = privKey.PubKey().SerializeCompressed()
+}
 
 // only used for testing
 func loadOrGenKeyNonEnclave() {

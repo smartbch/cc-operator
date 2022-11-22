@@ -16,7 +16,6 @@ import (
 	gethacc "github.com/ethereum/go-ethereum/accounts"
 	gethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-
 	"github.com/smartbch/cc-operator/utils"
 )
 
@@ -39,8 +38,8 @@ var (
 	errNotMonitor = errors.New("not monitor")
 )
 
-func Start(serverName, listenAddr, bootstrapRpcURL, nodesGovAddr, monitorAddrList string) {
-	loadOrGenKey()
+func Start(serverName, listenAddr, bootstrapRpcURL, nodesGovAddr, monitorAddrList, signerKeyWIF string) {
+	loadOrGenKey(signerKeyWIF)
 	initRpcClients(nodesGovAddr, bootstrapRpcURL, false)
 	go getAndSignSigHashes()
 	go watchSbchdNodes()
@@ -48,9 +47,13 @@ func Start(serverName, listenAddr, bootstrapRpcURL, nodesGovAddr, monitorAddrLis
 	select {}
 }
 
-func loadOrGenKey() {
+func loadOrGenKey(signerKeyWIF string) {
 	if integrationTestMode {
-		loadOrGenKeyNonEnclave()
+		if signerKeyWIF != "" {
+			loadKeyFromWIF(signerKeyWIF)
+		} else {
+			loadOrGenKeyNonEnclave()
+		}
 	} else {
 		loadOrGenKeyInEnclave()
 	}

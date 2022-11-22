@@ -8,10 +8,11 @@ import (
 
 var (
 	helpFlag        = false
-	serverName      = "sbch-operator"
+	serverName      = "cc-operator"
 	listenAddr      = "0.0.0.0:8801"
 	bootstrapRpcURL = "http://localhost:8545"
 	monitorAddrList = ""
+	signerKeyWIF    = ""
 
 	// TODO: change this to constant in production mode
 	nodesGovAddr = "0x0000000000000000000000000000000000001234"
@@ -19,11 +20,12 @@ var (
 
 func main() {
 	flag.BoolVar(&helpFlag, "help", false, "show help")
-	flag.StringVar(&serverName, "serverName", "cc-operator", "server name to generate TLS certificate")
-	flag.StringVar(&listenAddr, "listenAddr", "0.0.0.0:8801", "listen addr, ip:port")
-	flag.StringVar(&bootstrapRpcURL, "bootstrapRpcURL", "http://localhost:8545", "bootstrap smartBCH RPC URL")
-	flag.StringVar(&nodesGovAddr, "nodesGovAddr", "0x0000000000000000000000000000000000001234", "address of NodesGov contract")
-	flag.StringVar(&monitorAddrList, "monitorAddrList", "", "comma separated monitor addresses")
+	flag.StringVar(&serverName, "serverName", serverName, "server name to generate TLS certificate")
+	flag.StringVar(&listenAddr, "listenAddr", listenAddr, "listen addr, ip:port")
+	flag.StringVar(&bootstrapRpcURL, "bootstrapRpcURL", bootstrapRpcURL, "bootstrap smartBCH RPC URL")
+	flag.StringVar(&nodesGovAddr, "nodesGovAddr", nodesGovAddr, "address of NodesGov contract")
+	flag.StringVar(&monitorAddrList, "monitorAddrList", monitorAddrList, "comma separated monitor addresses")
+	flag.StringVar(&signerKeyWIF, "signerKeyWIF", signerKeyWIF, "signer key WIF, for integration test only")
 	flag.Parse()
 
 	if helpFlag {
@@ -31,5 +33,5 @@ func main() {
 		return
 	}
 
-	operator.Start(serverName, listenAddr, bootstrapRpcURL, nodesGovAddr, monitorAddrList)
+	operator.Start(serverName, listenAddr, bootstrapRpcURL, nodesGovAddr, monitorAddrList, signerKeyWIF)
 }
