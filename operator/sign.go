@@ -28,8 +28,8 @@ const (
 	newNodesDelayTime    = 6 * time.Hour
 	clientReqTimeout     = 5 * time.Minute
 
-	redeemPublicityPeriod  = 25 * time.Minute
-	convertPublicityPeriod = 100 * time.Minute
+	redeemPublicityPeriod  = 25 * 60
+	convertPublicityPeriod = 100 * 60
 )
 
 var (
