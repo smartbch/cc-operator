@@ -13,6 +13,7 @@ import (
 	"github.com/gcash/bchutil"
 
 	"github.com/smartbch/cc-operator/utils"
+	"github.com/smartbch/smartbch/crosschain/covenant"
 )
 
 const (
@@ -112,20 +113,15 @@ func unsealPrivKeyFromFile(fileData []byte) {
 
 func signSigHashECDSA(sigHashHex string) ([]byte, error) {
 	sigHashBytes := gethcmn.FromHex(sigHashHex)
-	sig, err := privKey.SignECDSA(sigHashBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return sig.Serialize(), nil
+	return covenant.SignRedeemTxSigHashECDSA(privKey, sigHashBytes)
 }
 
-func signSigHashSchnorr(sigHashHex string) ([]byte, error) {
-	sigHashBytes := gethcmn.FromHex(sigHashHex)
-	sig, err := privKey.SignSchnorr(sigHashBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return sig.Serialize(), nil
-}
+//func signSigHashSchnorr(sigHashHex string) ([]byte, error) {
+//	sigHashBytes := gethcmn.FromHex(sigHashHex)
+//	sig, err := privKey.SignSchnorr(sigHashBytes)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return sig.Serialize(), nil
+//}
