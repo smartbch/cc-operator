@@ -35,7 +35,6 @@ const (
 var (
 	nodesGovAddr      string
 	rpcClientLock     sync.RWMutex
-	bootstrapClient   *sbch.SimpleRpcClient
 	currClusterClient *sbch.ClusterClient
 	newClusterClient  *sbch.ClusterClient
 	nodesChangedTime  time.Time
@@ -45,11 +44,11 @@ var (
 	timeCache = gcache.New(timeCacheMaxCount).Expiration(sigCacheExpiration).Simple().Build()
 )
 
-func initRpcClients(_nodesGovAddr, bootstrapRpcURL string, _skipPbkCheck bool) {
+func initRpcClients(_nodesGovAddr string, bootstrapRpcURLs []string, _skipPbkCheck bool) {
 	nodesGovAddr = _nodesGovAddr
 	skipPbkCheck = _skipPbkCheck
 
-	bootstrapClient = sbch.NewSimpleRpcClient(nodesGovAddr, bootstrapRpcURL, clientReqTimeout)
+	bootstrapClient := sbch.NewClusterRpcClient(nodesGovAddr, bootstrapRpcURLs, clientReqTimeout)
 	allNodes, err := bootstrapClient.GetSbchdNodes()
 	if err != nil {
 		panic(err)

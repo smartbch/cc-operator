@@ -18,6 +18,14 @@ type ClusterClient struct {
 	ValidNodes []NodeInfo
 }
 
+func NewClusterRpcClient(nodesGovAddr string, nodeUrls []string, clientReqTimeout time.Duration) *ClusterClient {
+	clients := make([]RpcClient, len(nodeUrls))
+	for i, url := range nodeUrls {
+		clients[i] = NewSimpleRpcClient(nodesGovAddr, url, clientReqTimeout)
+	}
+	return &ClusterClient{clients: clients}
+}
+
 func NewClusterRpcClientOfNodes(nodesGovAddr string, nodes []NodeInfo,
 	minNodeCount int, skipPbkCheck bool, clientReqTimeout time.Duration) (*ClusterClient, error) {
 

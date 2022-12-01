@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-
 	"github.com/smartbch/cc-operator/operator"
 )
 
@@ -16,6 +15,8 @@ var (
 
 	// TODO: change this to constant in production mode
 	nodesGovAddr = "0x0000000000000000000000000000000000001234"
+
+	fixedBootstrapRpcURls = []string{"http://sbch1:8545", "http://sbch2:8545"}
 )
 
 func main() {
@@ -32,6 +33,16 @@ func main() {
 		flag.Usage()
 		return
 	}
-
-	operator.Start(serverName, listenAddr, bootstrapRpcURL, nodesGovAddr, monitorAddrList, signerKeyWIF)
+	var bootstrapRpcURLs []string
+	repeatBootstrapUrl := false
+	bootstrapRpcURLs = append(bootstrapRpcURLs, fixedBootstrapRpcURls...)
+	for _, url := range fixedBootstrapRpcURls {
+		if url == bootstrapRpcURL {
+			repeatBootstrapUrl = true
+		}
+	}
+	if !repeatBootstrapUrl {
+		bootstrapRpcURLs = append(bootstrapRpcURLs, bootstrapRpcURL)
+	}
+	operator.Start(serverName, listenAddr, nodesGovAddr, monitorAddrList, signerKeyWIF, bootstrapRpcURLs)
 }
