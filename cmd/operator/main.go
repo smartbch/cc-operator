@@ -4,9 +4,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"flag"
+	"strings"
+
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/smartbch/cc-operator/operator"
-	"strings"
 )
 
 var (
