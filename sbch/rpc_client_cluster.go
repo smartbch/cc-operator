@@ -13,9 +13,8 @@ import (
 var _ RpcClient = (*ClusterClient)(nil)
 
 type ClusterClient struct {
-	clients    []RpcClient
-	AllNodes   []NodeInfo
-	ValidNodes []NodeInfo
+	clients  []RpcClient
+	AllNodes []NodeInfo
 }
 
 func NewClusterRpcClient(nodesGovAddr string, nodeUrls []string, clientReqTimeout time.Duration) *ClusterClient {
@@ -27,35 +26,24 @@ func NewClusterRpcClient(nodesGovAddr string, nodeUrls []string, clientReqTimeou
 }
 
 func NewClusterRpcClientOfNodes(nodesGovAddr string, nodes []NodeInfo,
-	minNodeCount int, skipPbkCheck bool, clientReqTimeout time.Duration) (*ClusterClient, error) {
+	skipPbkCheck bool, clientReqTimeout time.Duration) (*ClusterClient, error) {
 
-	okNodes := make([]NodeInfo, 0, len(nodes))
 	clients := make([]RpcClient, 0, len(nodes))
 	for _, node := range nodes {
 		client := NewSimpleRpcClient(nodesGovAddr, node.RpcUrl, clientReqTimeout)
 		pbk, err := client.GetRpcPubkey()
 		if err != nil {
-			fmt.Println("failed to get pubkey from node:", node.RpcUrl, err)
-			continue
+			return nil, fmt.Errorf("get pubkey from %s failed: %w", node.RpcUrl, err)
 		}
-
 		if !skipPbkCheck && sha256.Sum256(pbk) != node.PbkHash {
-			fmt.Println("pubkey not match:", node.RpcUrl)
-			continue
+			return nil, fmt.Errorf("pubkey not match: %s", node.RpcUrl)
 		}
-
-		okNodes = append(okNodes, node)
 		clients = append(clients, client)
 	}
 
-	if len(okNodes) < minNodeCount {
-		return nil, fmt.Errorf("not enough valid nodes to connect")
-	}
-
 	return &ClusterClient{
-		clients:    clients,
-		AllNodes:   nodes,
-		ValidNodes: okNodes,
+		clients:  clients,
+		AllNodes: nodes,
 	}, nil
 }
 
