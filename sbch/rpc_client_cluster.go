@@ -25,8 +25,8 @@ func NewClusterRpcClient(nodesGovAddr string, nodeUrls []string, clientReqTimeou
 	return &ClusterClient{clients: clients}
 }
 
-func NewClusterRpcClientOfNodes(nodesGovAddr string, nodes []NodeInfo,
-	skipPbkCheck bool, clientReqTimeout time.Duration) (*ClusterClient, error) {
+func NewClusterRpcClientOfNodes(nodesGovAddr string, nodes []NodeInfo, skipPbkCheck bool,
+	privateUrls []string, clientReqTimeout time.Duration) (*ClusterClient, error) {
 
 	clients := make([]RpcClient, 0, len(nodes))
 	for _, node := range nodes {
@@ -40,7 +40,9 @@ func NewClusterRpcClientOfNodes(nodesGovAddr string, nodes []NodeInfo,
 		}
 		clients = append(clients, client)
 	}
-
+	for _, url := range privateUrls {
+		clients = append(clients, NewSimpleRpcClient(nodesGovAddr, url, clientReqTimeout))
+	}
 	return &ClusterClient{
 		clients:  clients,
 		AllNodes: nodes,

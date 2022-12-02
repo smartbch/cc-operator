@@ -38,11 +38,11 @@ var (
 	errNotMonitor = errors.New("not monitor")
 )
 
-func Start(serverName, listenAddr, nodesGovAddr, monitorAddrList, signerKeyWIF string, bootstrapRpcURLs []string) {
+func Start(serverName, listenAddr, nodesGovAddr, monitorAddrList, signerKeyWIF string, bootstrapRpcURLs []string, privateUrls []string) {
 	loadOrGenKey(signerKeyWIF)
-	initRpcClients(nodesGovAddr, bootstrapRpcURLs, false)
+	initRpcClients(nodesGovAddr, bootstrapRpcURLs, privateUrls, false)
 	go getAndSignSigHashes()
-	go watchSbchdNodes()
+	go watchSbchdNodes(privateUrls)
 	go startHttpsServer(serverName, listenAddr, monitorAddrList)
 	select {}
 }

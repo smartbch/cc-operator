@@ -15,6 +15,7 @@ var (
 	serverName      = "cc-operator"
 	listenAddr      = "0.0.0.0:8801"
 	bootstrapRpcURL = "http://localhost:8545"
+	privateRpcURLs  = ""
 	monitorAddrList = ""
 	signerKeyWIF    = ""
 
@@ -34,13 +35,18 @@ func main() {
 	flag.StringVar(&nodesGovAddr, "nodesGovAddr", nodesGovAddr, "address of NodesGov contract")
 	flag.StringVar(&monitorAddrList, "monitorAddrList", monitorAddrList, "comma separated monitor addresses")
 	flag.StringVar(&signerKeyWIF, "signerKeyWIF", signerKeyWIF, "signer key WIF, for integration test only")
-	flag.StringVar(&newFixedBootstrapRpcUrl, "newFixedBootstrapUrl", newFixedBootstrapRpcUrl, "new fixed bootstrap urls with signature")
+	flag.StringVar(&newFixedBootstrapRpcUrl, "newFixedBootstrapUrl", newFixedBootstrapRpcUrl, "new fixed bootstrap urls with signature separated with comma")
+	flag.StringVar(&privateRpcURLs, "privateRpcUrls", privateRpcURLs, "comma separated private rpc urls")
 	flag.Parse()
 	if helpFlag {
 		flag.Usage()
 		return
 	}
-	operator.Start(serverName, listenAddr, nodesGovAddr, monitorAddrList, signerKeyWIF, getBootstrapRpcUrls(newFixedBootstrapRpcUrl))
+	var privateRpcURLList []string
+	if privateRpcURLs != "" {
+		privateRpcURLList = strings.Split(privateRpcURLs, ",")
+	}
+	operator.Start(serverName, listenAddr, nodesGovAddr, monitorAddrList, signerKeyWIF, getBootstrapRpcUrls(newFixedBootstrapRpcUrl), privateRpcURLList)
 }
 
 func getNewBootstrapRpcPubkey() []byte {

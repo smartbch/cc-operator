@@ -44,7 +44,7 @@ var (
 	timeCache = gcache.New(timeCacheMaxCount).Expiration(sigCacheExpiration).Simple().Build()
 )
 
-func initRpcClients(_nodesGovAddr string, bootstrapRpcURLs []string, _skipPbkCheck bool) {
+func initRpcClients(_nodesGovAddr string, bootstrapRpcURLs, privateUrls []string, _skipPbkCheck bool) {
 	nodesGovAddr = _nodesGovAddr
 	skipPbkCheck = _skipPbkCheck
 
@@ -55,8 +55,7 @@ func initRpcClients(_nodesGovAddr string, bootstrapRpcURLs []string, _skipPbkChe
 	}
 
 	sortNodes(allNodes)
-	clusterClient, err := sbch.NewClusterRpcClientOfNodes(
-		nodesGovAddr, allNodes, skipPbkCheck, clientReqTimeout)
+	clusterClient, err := sbch.NewClusterRpcClientOfNodes(nodesGovAddr, allNodes, skipPbkCheck, privateUrls, clientReqTimeout)
 	if err != nil {
 		panic(err)
 	}
@@ -204,7 +203,7 @@ func cacheSigHashes4Mo(redeemingSigHashes4Mo, toBeConvertedSigHashes4Mo []string
 }
 
 // run this in a goroutine
-func watchSbchdNodes() {
+func watchSbchdNodes(privateUrls []string) {
 	fmt.Println("start to watchSbchdNodes ...")
 	// TODO: change to time.Ticker?
 	for {
@@ -220,7 +219,7 @@ func watchSbchdNodes() {
 		if nodesChanged(latestNodes) {
 			newClusterClient = nil
 			clusterClient, err := sbch.NewClusterRpcClientOfNodes(
-				nodesGovAddr, latestNodes, skipPbkCheck, clientReqTimeout)
+				nodesGovAddr, latestNodes, skipPbkCheck, privateUrls, clientReqTimeout)
 			if err != nil {
 				fmt.Println("failed to check sbchd nodes:", err.Error())
 				continue
