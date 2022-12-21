@@ -14,7 +14,6 @@ var (
 	helpFlag        = false
 	serverName      = "cc-operator"
 	listenAddr      = "0.0.0.0:8801"
-	bootstrapRpcURL = "http://localhost:8545"
 	privateRpcURLs  = ""
 	monitorAddrList = ""
 	signerKeyWIF    = ""
@@ -36,7 +35,6 @@ func main() {
 	flag.BoolVar(&helpFlag, "help", false, "show help")
 	flag.StringVar(&serverName, "serverName", serverName, "server name to generate TLS certificate")
 	flag.StringVar(&listenAddr, "listenAddr", listenAddr, "listen addr, ip:port")
-	flag.StringVar(&bootstrapRpcURL, "bootstrapRpcURL", bootstrapRpcURL, "bootstrap smartBCH RPC URL")
 	flag.StringVar(&nodesGovAddr, "nodesGovAddr", nodesGovAddr, "address of NodesGov contract")
 	flag.StringVar(&monitorAddrList, "monitorAddrList", monitorAddrList, "comma separated monitor addresses")
 	flag.StringVar(&signerKeyWIF, "signerKeyWIF", signerKeyWIF, "signer key WIF, for integration test only")
@@ -92,16 +90,5 @@ func getBootstrapRpcUrls(newFixedBootstrapRpcUrl, pbkHex string) []string {
 
 	var bootstrapRpcURLs []string
 	bootstrapRpcURLs = append(bootstrapRpcURLs, fixedBootstrapRpcURls...)
-
-	repeatBootstrapUrl := false
-	for _, url := range fixedBootstrapRpcURls {
-		if url == bootstrapRpcURL {
-			repeatBootstrapUrl = true
-		}
-	}
-	if !repeatBootstrapUrl {
-		bootstrapRpcURLs = append(bootstrapRpcURLs, bootstrapRpcURL)
-	}
-
 	return bootstrapRpcURLs
 }

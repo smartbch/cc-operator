@@ -7,7 +7,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
+	geth "github.com/ethereum/go-ethereum"
 	gethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/holiman/uint256"
 
@@ -16,8 +16,6 @@ import (
 )
 
 const (
-	//nodesGovContractAddr = "0x0000000000000000000000000000000000001234" // TODO
-
 	getNodeCountSel = "0x39bf397e" // ethers.utils.id('getNodeCount()')
 	getNodeByIdxSel = "0x1c53c280" // ethers.utils.id('nodes(uint256)')
 )
@@ -25,24 +23,24 @@ const (
 var _ RpcClient = (*SimpleRpcClient)(nil)
 
 type SimpleRpcClient struct {
-	nodesGovAddr  gethcmn.Address
-	sbchRpcClient *sbchrpcclient.Client
 	rpcUrl        string
 	reqTimeout    time.Duration
+	nodesGovAddr  gethcmn.Address
+	sbchRpcClient *sbchrpcclient.Client
 }
 
-func NewSimpleRpcClient(nodesGovAddr, rpcUrl string, reqTimeout time.Duration) *SimpleRpcClient {
+func NewSimpleRpcClient(nodesGovAddr, rpcUrl string, reqTimeout time.Duration) (*SimpleRpcClient, error) {
 	sbchRpcClient, err := sbchrpcclient.DialHTTP(rpcUrl)
 	if err != nil {
-		panic(err) // TODO: return error
+		return nil, err
 	}
 
 	return &SimpleRpcClient{
-		nodesGovAddr:  gethcmn.HexToAddress(nodesGovAddr),
-		sbchRpcClient: sbchRpcClient,
 		rpcUrl:        rpcUrl,
 		reqTimeout:    reqTimeout,
-	}
+		nodesGovAddr:  gethcmn.HexToAddress(nodesGovAddr),
+		sbchRpcClient: sbchRpcClient,
+	}, nil
 }
 
 func (client *SimpleRpcClient) RpcURL() string {
@@ -62,6 +60,7 @@ func (client *SimpleRpcClient) GetSbchdNodes() ([]NodeInfo, error) {
 		return nil, err
 	}
 
+	// TODO: parallelize
 	nodes := make([]NodeInfo, nodeCount)
 	for i := uint64(0); i < nodeCount; i++ {
 		nodes[i], err = client.getNodeByIdx(i, ctx)
@@ -73,7 +72,7 @@ func (client *SimpleRpcClient) GetSbchdNodes() ([]NodeInfo, error) {
 	return nodes, nil
 }
 func (client *SimpleRpcClient) getNodeCount(ctx context.Context) (uint64, error) {
-	callMsg := ethereum.CallMsg{
+	callMsg := geth.CallMsg{
 		To:   &client.nodesGovAddr,
 		Data: gethcmn.FromHex(getNodeCountSel),
 	}
@@ -85,7 +84,7 @@ func (client *SimpleRpcClient) getNodeCount(ctx context.Context) (uint64, error)
 }
 func (client *SimpleRpcClient) getNodeByIdx(n uint64, ctx context.Context) (node NodeInfo, err error) {
 	callData := append(gethcmn.FromHex(getNodeByIdxSel), uint256.NewInt(n).PaddedBytes(32)...)
-	callMsg := ethereum.CallMsg{
+	callMsg := geth.CallMsg{
 		To:   &client.nodesGovAddr,
 		Data: callData,
 	}

@@ -48,7 +48,10 @@ func initRpcClients(_nodesGovAddr string, bootstrapRpcURLs, privateUrls []string
 	nodesGovAddr = _nodesGovAddr
 	skipPbkCheck = _skipPbkCheck
 
-	bootstrapClient := sbch.NewClusterRpcClient(nodesGovAddr, bootstrapRpcURLs, clientReqTimeout)
+	bootstrapClient, err := sbch.NewClusterRpcClient(nodesGovAddr, bootstrapRpcURLs, clientReqTimeout)
+	if err != nil {
+		panic(err)
+	}
 	allNodes, err := bootstrapClient.GetSbchdNodes()
 	if err != nil {
 		panic(err)

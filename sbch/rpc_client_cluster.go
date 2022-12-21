@@ -17,12 +17,18 @@ type ClusterClient struct {
 	AllNodes []NodeInfo
 }
 
-func NewClusterRpcClient(nodesGovAddr string, nodeUrls []string, clientReqTimeout time.Duration) *ClusterClient {
+func NewClusterRpcClient(nodesGovAddr string, nodeUrls []string,
+	clientReqTimeout time.Duration) (*ClusterClient, error) {
+
 	clients := make([]RpcClient, len(nodeUrls))
 	for i, url := range nodeUrls {
-		clients[i] = NewSimpleRpcClient(nodesGovAddr, url, clientReqTimeout)
+		client, err := NewSimpleRpcClient(nodesGovAddr, url, clientReqTimeout)
+		if err != nil {
+			return nil, fmt.Errorf("dail %s failed: %w", url, err)
+		}
+		clients[i] = client
 	}
-	return &ClusterClient{clients: clients}
+	return &ClusterClient{clients: clients}, nil
 }
 
 func NewClusterRpcClientOfNodes(nodesGovAddr string, nodes []NodeInfo, skipPbkCheck bool,
@@ -30,7 +36,10 @@ func NewClusterRpcClientOfNodes(nodesGovAddr string, nodes []NodeInfo, skipPbkCh
 
 	clients := make([]RpcClient, 0, len(nodes))
 	for _, node := range nodes {
-		client := NewSimpleRpcClient(nodesGovAddr, node.RpcUrl, clientReqTimeout)
+		client, err := NewSimpleRpcClient(nodesGovAddr, node.RpcUrl, clientReqTimeout)
+		if err != nil {
+			return nil, fmt.Errorf("dail %s failed: %w", node.RpcUrl, err)
+		}
 		pbk, err := client.GetRpcPubkey()
 		if err != nil {
 			return nil, fmt.Errorf("get pubkey from %s failed: %w", node.RpcUrl, err)
@@ -41,7 +50,11 @@ func NewClusterRpcClientOfNodes(nodesGovAddr string, nodes []NodeInfo, skipPbkCh
 		clients = append(clients, client)
 	}
 	for _, url := range privateUrls {
-		clients = append(clients, NewSimpleRpcClient(nodesGovAddr, url, clientReqTimeout))
+		client, err := NewSimpleRpcClient(nodesGovAddr, url, clientReqTimeout)
+		if err != nil {
+			return nil, fmt.Errorf("dail %s failed: %w", url, err)
+		}
+		clients = append(clients, client)
 	}
 	return &ClusterClient{
 		clients:  clients,
