@@ -42,11 +42,16 @@ func main() {
 		flag.Usage()
 		return
 	}
+
+	pbk := getNewBootstrapRpcPubkey()
+	bootstrapRpcURLs := getBootstrapRpcUrls(newFixedBootstrapRpcUrl, pbk)
+
 	var privateRpcURLList []string
 	if privateRpcURLs != "" {
 		privateRpcURLList = strings.Split(privateRpcURLs, ",")
 	}
-	operator.Start(serverName, listenAddr, nodesGovAddr, monitorAddrList, signerKeyWIF, getBootstrapRpcUrls(newFixedBootstrapRpcUrl), privateRpcURLList)
+
+	operator.Start(serverName, listenAddr, nodesGovAddr, monitorAddrList, signerKeyWIF, bootstrapRpcURLs, privateRpcURLList)
 }
 
 func getNewBootstrapRpcPubkey() []byte {
@@ -62,8 +67,7 @@ func getNewBootstrapRpcPubkey() []byte {
 }
 
 // newFixedBootstrapRpcUrl format: url0,url1,sig
-func getBootstrapRpcUrls(newFixedBootstrapRpcUrl string) []string {
-	pb := getNewBootstrapRpcPubkey()
+func getBootstrapRpcUrls(newFixedBootstrapRpcUrl string, pb []byte) []string {
 	if newFixedBootstrapRpcUrl != "" {
 		parts := strings.Split(newFixedBootstrapRpcUrl, ",")
 		if len(parts) != 3 {
@@ -79,9 +83,11 @@ func getBootstrapRpcUrls(newFixedBootstrapRpcUrl string) []string {
 		}
 		fixedBootstrapRpcURls = []string{parts[0], parts[1]}
 	}
+
 	var bootstrapRpcURLs []string
-	repeatBootstrapUrl := false
 	bootstrapRpcURLs = append(bootstrapRpcURLs, fixedBootstrapRpcURls...)
+
+	repeatBootstrapUrl := false
 	for _, url := range fixedBootstrapRpcURls {
 		if url == bootstrapRpcURL {
 			repeatBootstrapUrl = true
@@ -90,5 +96,6 @@ func getBootstrapRpcUrls(newFixedBootstrapRpcUrl string) []string {
 	if !repeatBootstrapUrl {
 		bootstrapRpcURLs = append(bootstrapRpcURLs, bootstrapRpcURL)
 	}
+
 	return bootstrapRpcURLs
 }
