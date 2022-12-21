@@ -9,7 +9,7 @@ require (
 	github.com/gcash/bchd v0.19.0
 	github.com/gcash/bchutil v0.0.0-20210113190856-6ea28dff4000
 	github.com/holiman/uint256 v1.2.0
-	github.com/smartbch/smartbch v0.4.5-0.20221124065050-319e182259f0
+	github.com/smartbch/smartbch v0.4.5-0.20221219040315-3a5d7b5cb1b8
 	github.com/stretchr/testify v1.7.0
 )
 

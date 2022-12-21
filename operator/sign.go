@@ -23,13 +23,13 @@ const (
 	timeCacheMaxCount   = 200000
 	timeCacheExpiration = 24 * time.Hour
 
-	getSigHashesInterval = 3 * time.Second
+	getSigHashesInterval = 10 * time.Second
 	checkNodesInterval   = 6 * time.Minute
 	newNodesDelayTime    = 6 * time.Hour
 	clientReqTimeout     = 5 * time.Minute
 
-	redeemPublicityPeriod  = 25 * 60
-	convertPublicityPeriod = 100 * 60
+	redeemPublicityPeriod  = 25  // * 60
+	convertPublicityPeriod = 100 // * 60
 )
 
 var (
@@ -278,7 +278,7 @@ func getSig(sigHashHex string) ([]byte, error) {
 	}
 	currentTime := utils.GetTimestampFromTSC()
 	if currentTime < okToSignTime { // Cannot Sign
-		return nil, errors.New("still too early to sign")
+		return nil, fmt.Errorf("still too early to sign: %d < %d", currentTime, okToSignTime)
 	}
 
 	sig, ok := val.([]byte)

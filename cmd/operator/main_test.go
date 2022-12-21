@@ -24,6 +24,7 @@ func TestGetBootstrapRpcUrls(t *testing.T) {
 
 	option := fmt.Sprintf("%s,%s,%s", url1, url2, hex.EncodeToString(sig[:64]))
 	pbk := crypto.FromECDSAPub(&privKey.PublicKey)
-	urls := getBootstrapRpcUrls(option, pbk)
+	pbkHex := hex.EncodeToString(pbk)
+	urls := getBootstrapRpcUrls(option, pbkHex)
 	fmt.Println(urls)
 }

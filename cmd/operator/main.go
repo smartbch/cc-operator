@@ -22,8 +22,13 @@ var (
 	// TODO: change this to constant in production mode
 	nodesGovAddr = "0x0000000000000000000000000000000000001234"
 
-	fixedBootstrapRpcURls = []string{"http://sbch1:8545", "http://sbch2:8545"} //todo: replace in product
-	bootstrapSetPubkey    = ""                                                 //todo: replace with centralized rpc pubkey in product
+	// TODO: replace in product
+	fixedBootstrapRpcURls = []string{
+		"http://18.141.161.139:8545",
+		"http://18.141.161.139:8545",
+	}
+	// TODO: replace with centralized rpc pubkey in product
+	bootstrapSetPubkey = ""
 )
 
 func main() {
@@ -43,8 +48,7 @@ func main() {
 		return
 	}
 
-	pbk := getNewBootstrapRpcPubkey()
-	bootstrapRpcURLs := getBootstrapRpcUrls(newFixedBootstrapRpcUrl, pbk)
+	bootstrapRpcURLs := getBootstrapRpcUrls(newFixedBootstrapRpcUrl, bootstrapSetPubkey)
 
 	var privateRpcURLList []string
 	if privateRpcURLs != "" {
@@ -54,8 +58,8 @@ func main() {
 	operator.Start(serverName, listenAddr, nodesGovAddr, monitorAddrList, signerKeyWIF, bootstrapRpcURLs, privateRpcURLList)
 }
 
-func getNewBootstrapRpcPubkey() []byte {
-	pb, err := hex.DecodeString(bootstrapSetPubkey)
+func getNewBootstrapRpcPubkey(pbkHex string) []byte {
+	pb, err := hex.DecodeString(pbkHex)
 	if err != nil {
 		panic(err)
 	}
@@ -67,8 +71,10 @@ func getNewBootstrapRpcPubkey() []byte {
 }
 
 // newFixedBootstrapRpcUrl format: url0,url1,sig
-func getBootstrapRpcUrls(newFixedBootstrapRpcUrl string, pb []byte) []string {
+func getBootstrapRpcUrls(newFixedBootstrapRpcUrl, pbkHex string) []string {
 	if newFixedBootstrapRpcUrl != "" {
+		pb := getNewBootstrapRpcPubkey(pbkHex)
+
 		parts := strings.Split(newFixedBootstrapRpcUrl, ",")
 		if len(parts) != 3 {
 			panic("new fixed bootstrap url should has 3 parts")
