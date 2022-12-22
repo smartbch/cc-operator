@@ -1,12 +1,10 @@
 package operator
 
 import (
-	"bytes"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"reflect"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -33,7 +31,8 @@ const (
 )
 
 var (
-	nodesGovAddr      string
+	nodesGovAddr string // never changed
+
 	rpcClientLock     sync.RWMutex
 	currClusterClient *sbch.ClusterClient
 	newClusterClient  *sbch.ClusterClient
@@ -46,27 +45,25 @@ var (
 func initRpcClients(_nodesGovAddr string, bootstrapRpcURLs, privateUrls []string) {
 	nodesGovAddr = _nodesGovAddr
 
+	// create bootstrapClient and use it to get all nodes
 	bootstrapClient, err := sbch.NewClusterRpcClient(nodesGovAddr, bootstrapRpcURLs, clientReqTimeout)
 	if err != nil {
 		panic(err)
 	}
-	allNodes, err := bootstrapClient.GetSbchdNodes()
+	allNodes, err := bootstrapClient.GetSbchdNodesSorted()
 	if err != nil {
 		panic(err)
 	}
 
-	sortNodes(allNodes)
+	// create clusterClient and check nodes
 	clusterClient, err := sbch.NewClusterRpcClientOfNodes(nodesGovAddr, allNodes, privateUrls, clientReqTimeout)
 	if err != nil {
 		panic(err)
 	}
-
-	latestNodes, err := clusterClient.GetSbchdNodes()
+	latestNodes, err := clusterClient.GetSbchdNodesSorted()
 	if err != nil {
 		panic(err)
 	}
-
-	sortNodes(latestNodes)
 	if !nodesEqual(latestNodes, allNodes) {
 		panic("Invalid Bootstrap Client")
 	}
@@ -210,14 +207,15 @@ func watchSbchdNodes(privateUrls []string) {
 	for {
 		time.Sleep(checkNodesInterval)
 
-		latestNodes, err := currClusterClient.GetSbchdNodes()
+		fmt.Println("get latest nodes ...")
+		latestNodes, err := currClusterClient.GetSbchdNodesSorted()
 		if err != nil {
 			fmt.Println("failed to get sbchd nodes:", err.Error())
 			continue
 		}
 
-		sortNodes(latestNodes)
 		if nodesChanged(latestNodes) {
+			fmt.Println("nodes changed")
 			newClusterClient = nil
 			clusterClient, err := sbch.NewClusterRpcClientOfNodes(
 				nodesGovAddr, latestNodes, privateUrls, clientReqTimeout)
@@ -229,10 +227,13 @@ func watchSbchdNodes(privateUrls []string) {
 			nodesChangedTime = time.Now()
 			newClusterClient = clusterClient
 			continue
+		} else {
+			fmt.Println("nodes not changed")
 		}
 
 		if newClusterClient != nil {
 			if time.Now().Sub(nodesChangedTime) > newNodesDelayTime {
+				fmt.Println("switch to new cluster client")
 				rpcClientLock.Lock()
 				currClusterClient = newClusterClient
 				newClusterClient = nil
@@ -242,19 +243,12 @@ func watchSbchdNodes(privateUrls []string) {
 	}
 }
 
-func sortNodes(nodes []sbch.NodeInfo) {
-	sort.Slice(nodes, func(i, j int) bool {
-		return bytes.Compare(nodes[i].PbkHash[:], nodes[j].PbkHash[:]) < 0
-	})
-}
-
 func nodesChanged(latestNodes []sbch.NodeInfo) bool {
 	if newClusterClient != nil {
 		return nodesEqual(newClusterClient.AllNodes, latestNodes)
 	}
 	return nodesEqual(currClusterClient.AllNodes, latestNodes)
 }
-
 func nodesEqual(s1, s2 []sbch.NodeInfo) bool {
 	return reflect.DeepEqual(s1, s2)
 }

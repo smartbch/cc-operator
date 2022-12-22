@@ -142,8 +142,9 @@ func TestHandleSuspend(t *testing.T) {
 	key3, _ := genKeyAndAddr()
 
 	ts := time.Now().Unix()
-	sig1, _ := crypto.Sign(gethacc.TextHash([]byte(fmt.Sprintf("%d", ts))), key1)
-	sig3, _ := crypto.Sign(gethacc.TextHash([]byte(fmt.Sprintf("%d", ts))), key3)
+	pk := "0x" + hex.EncodeToString(pubKeyBytes)
+	sig1, _ := crypto.Sign(gethacc.TextHash([]byte(fmt.Sprintf("%s,%d", pk, ts))), key1)
+	sig3, _ := crypto.Sign(gethacc.TextHash([]byte(fmt.Sprintf("%s,%d", pk, ts))), key3)
 
 	monitorAddresses = []gethcmn.Address{addr1, addr2}
 	defer func() {

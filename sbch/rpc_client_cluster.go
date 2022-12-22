@@ -1,9 +1,11 @@
 package sbch
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"reflect"
+	"sort"
 	"sync"
 	"time"
 
@@ -76,6 +78,19 @@ func (cluster *ClusterClient) GetSbchdNodes() ([]NodeInfo, error) {
 		return nil, err
 	}
 	return result.([]NodeInfo), err
+}
+
+func (cluster *ClusterClient) GetSbchdNodesSorted() ([]NodeInfo, error) {
+	nodes, err := cluster.GetSbchdNodes()
+	if err == nil {
+		sortNodes(nodes)
+	}
+	return nodes, err
+}
+func sortNodes(nodes []NodeInfo) {
+	sort.Slice(nodes, func(i, j int) bool {
+		return bytes.Compare(nodes[i].PbkHash[:], nodes[j].PbkHash[:]) < 0
+	})
 }
 
 func (cluster *ClusterClient) GetRedeemingUtxosForOperators() ([]*sbchrpctypes.UtxoInfo, error) {
