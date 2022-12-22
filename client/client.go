@@ -83,9 +83,10 @@ func (client *Client) GetPubkeyBytes() (result []byte, err error) {
 	return
 }
 
-func (client *Client) Suspend(sig string, ts int64) error {
+func (client *Client) Suspend(sig string, ts int64) (result []byte, err error) {
 	pathAndQuery := fmt.Sprintf("/suspend?sig=%s&ts=%d", sig, ts)
-	return client.getWithTimeout(pathAndQuery, nil)
+	err = client.getWithTimeout(pathAndQuery, &result)
+	return
 }
 
 func (client *Client) getWithTimeout(pathAndQuery string, result any) error {
