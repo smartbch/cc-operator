@@ -89,10 +89,8 @@ func createHttpHandlers() *http.ServeMux {
 	mux.HandleFunc("/pubkey-report", handlePubkeyReport)
 	mux.HandleFunc("/pubkey-jwt", handlePubkeyJwt)
 	mux.HandleFunc("/sig", handleSig)
-	mux.HandleFunc("/nodes", handleCurrNodes)
-	mux.HandleFunc("/newNodes", handleNewNodes)
-	mux.HandleFunc("/suspend", handleSuspend)
-	mux.HandleFunc("/status", handleStatus)
+	mux.HandleFunc("/info", handleOpInfo)
+	mux.HandleFunc("/suspend", handleSuspend) // only monitor
 	mux.HandleFunc("/redeeming-utxos-for-operators", handleGetRedeemingUtxosForOperators)
 	mux.HandleFunc("/redeeming-utxos-for-monitors", handleGetRedeemingUtxosForMonitors)
 	mux.HandleFunc("/to-be-converted-utxos-for-operators", handleGetToBeConvertedUtxosForOperators)
@@ -185,30 +183,14 @@ func handleSig(w http.ResponseWriter, r *http.Request) {
 	NewOkResp("0x" + hex.EncodeToString(sig)).WriteTo(w)
 }
 
-func handleCurrNodes(w http.ResponseWriter, r *http.Request) {
-	resp := Resp{
-		Success: true,
-		Result:  getCurrNodes(),
-	}
-	resp.WriteTo(w)
-}
-func handleNewNodes(w http.ResponseWriter, r *http.Request) {
-	resp := Resp{
-		Success: true,
-		Result:  getNewNodes(),
-	}
-	resp.WriteTo(w)
-}
-
-func handleStatus(w http.ResponseWriter, r *http.Request) {
-	resp := Resp{
-		Success: true,
-		Result:  "ok",
-	}
+func handleOpInfo(w http.ResponseWriter, r *http.Request) {
+	opInfo := getNodesInfo()
+	opInfo.Status = "ok"
 	if suspended.Load() != nil {
-		resp.Result = "suspended"
+		opInfo.Status = "suspended"
 	}
-	resp.WriteTo(w)
+
+	NewOkResp(opInfo).WriteTo(w)
 }
 
 // only monitors can call this
@@ -254,7 +236,7 @@ func parseAndCheckTs(tsParam string) error {
 }
 func checkSig(ts, sig string) error {
 	pk := "0x" + hex.EncodeToString(pubKeyBytes)
-	hash := gethacc.TextHash([]byte(pk+","+ts))
+	hash := gethacc.TextHash([]byte(pk + "," + ts))
 	pbk, err := crypto.SigToPub(hash[:], gethcmn.FromHex(sig))
 	if err != nil {
 		return err

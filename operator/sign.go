@@ -283,16 +283,16 @@ func getSig(sigHashHex string) ([]byte, error) {
 	return sig, nil
 }
 
-func getCurrNodes() []sbch.NodeInfo {
+func getNodesInfo() (nodesInfo OpInfo) {
 	rpcClientLock.RLock()
 	defer rpcClientLock.RUnlock()
-	return currClusterClient.AllNodes
-}
-func getNewNodes() []sbch.NodeInfo {
-	rpcClientLock.RLock()
-	defer rpcClientLock.RUnlock()
-	if newClusterClient == nil {
-		return nil
+
+	if currClusterClient != nil {
+		nodesInfo.CurrNodes = currClusterClient.AllNodes
 	}
-	return newClusterClient.AllNodes
+	if newClusterClient != nil {
+		nodesInfo.NewNodes = newClusterClient.AllNodes
+		nodesInfo.NodesChangedTime = nodesChangedTime.Unix()
+	}
+	return nodesInfo
 }

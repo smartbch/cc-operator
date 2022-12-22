@@ -90,12 +90,24 @@ func TestHandleCurrNodes(t *testing.T) {
 	}
 	defer func() { currClusterClient = _currClusterClient }()
 
-	expected := `{"success":true,"result":[{"id":1234,"pbkHash":"0xce12340000000000000000000000000000000000000000000000000000000000","rpcUrl":"rpc1234","intro":"node1234"}]}`
-	require.Equal(t, expected, mustCallHandler("/nodes"))
+	expected := `{"success":true,"result":{"status":"ok","currNodes":[{"id":1234,"pbkHash":"0xce12340000000000000000000000000000000000000000000000000000000000","rpcUrl":"rpc1234","intro":"node1234"}]}}`
+	require.Equal(t, expected, mustCallHandler("/info"))
 }
 
 func TestHandleNewNodes(t *testing.T) {
+	_currClusterClient := currClusterClient
+	currClusterClient = &sbch.ClusterClient{
+		AllNodes: []sbch.NodeInfo{
+			{
+				ID:      1234,
+				PbkHash: [32]byte{0xce, 0x12, 0x34},
+				RpcUrl:  "rpc1234",
+				Intro:   "node1234",
+			},
+		},
+	}
 	_newClusterClient := newClusterClient
+	nodesChangedTime = time.Unix(1671681687, 0)
 	newClusterClient = &sbch.ClusterClient{
 		AllNodes: []sbch.NodeInfo{
 			{
@@ -106,21 +118,24 @@ func TestHandleNewNodes(t *testing.T) {
 			},
 		},
 	}
-	defer func() { newClusterClient = _newClusterClient }()
+	defer func() {
+		currClusterClient = _currClusterClient
+		newClusterClient = _newClusterClient
+	}()
 
-	expected := `{"success":true,"result":[{"id":2345,"pbkHash":"0xce23450000000000000000000000000000000000000000000000000000000000","rpcUrl":"rpc2345","intro":"node2345"}]}`
-	require.Equal(t, expected, mustCallHandler("/newNodes"))
+	expected := `{"success":true,"result":{"status":"ok","currNodes":[{"id":1234,"pbkHash":"0xce12340000000000000000000000000000000000000000000000000000000000","rpcUrl":"rpc1234","intro":"node1234"}],"newNodes":[{"id":2345,"pbkHash":"0xce23450000000000000000000000000000000000000000000000000000000000","rpcUrl":"rpc2345","intro":"node2345"}],"nodesChangedTime":1671681687}}`
+	require.Equal(t, expected, mustCallHandler("/info"))
 }
 
 func TestHandleStats(t *testing.T) {
-	require.Equal(t, `{"success":true,"result":"ok"}`,
-		mustCallHandler("/status"))
+	require.Equal(t, `{"success":true,"result":{"status":"ok"}}`,
+		mustCallHandler("/info"))
 
 	suspended.Store(true)
 	defer func() { suspended = atomic.Value{} }()
 
-	require.Equal(t, `{"success":true,"result":"suspended"}`,
-		mustCallHandler("/status"))
+	require.Equal(t, `{"success":true,"result":{"status":"suspended"}}`,
+		mustCallHandler("/info"))
 	require.Equal(t, `{"success":false,"error":"suspended"}`,
 		mustCallHandler("/sig?hash=1234"))
 }

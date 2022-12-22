@@ -3,7 +3,16 @@ package operator
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/smartbch/cc-operator/sbch"
 )
+
+type OpInfo struct {
+	Status           string          `json:"status"`
+	CurrNodes        []sbch.NodeInfo `json:"currNodes,omitempty"`
+	NewNodes         []sbch.NodeInfo `json:"newNodes,omitempty"`
+	NodesChangedTime int64           `json:"nodesChangedTime,omitempty"`
+}
 
 type Resp struct {
 	Success bool   `json:"success"`
