@@ -253,8 +253,8 @@ func parseAndCheckTs(tsParam string) error {
 	return nil
 }
 func checkSig(ts, sig string) error {
-	hash, _ := gethacc.TextAndHash([]byte(ts))
-	//fmt.Println(msg)
+	pk := hex.EncodeToString(pubKeyBytes)
+	hash := gethacc.TextHash([]byte(pk+","+ts))
 	pbk, err := crypto.SigToPub(hash[:], gethcmn.FromHex(sig))
 	if err != nil {
 		return err
