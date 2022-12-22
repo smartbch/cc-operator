@@ -66,6 +66,11 @@ func (client *Client) GetToBeConvertedUtxosForMonitors() (utxoList []*sbchrpctyp
 	return
 }
 
+func (client *Client) GetPubkeyBytes() (result []byte, err error) {
+	err = client.httpGet(context.Background(), "/pubkey", &result)
+	return
+}
+
 func (client *Client) Suspend(sig string, ts int64) error {
 	pathAndQuery := fmt.Sprintf("/suspend?sig=%s&ts=%d", sig, ts)
 	return client.httpGet(context.Background(), pathAndQuery, nil)
@@ -99,9 +104,13 @@ func (client *Client) httpGet(ctx context.Context, pathAndQuery string, result a
 	}
 
 	if result != nil {
-		err = json.Unmarshal(respObj.Result, result)
-		if err != nil {
-			return err
+		if bzPtr, ok := result.(*[]byte); ok {
+			*bzPtr = respObj.Result
+		} else {
+			err = json.Unmarshal(respObj.Result, result)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
