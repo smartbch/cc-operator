@@ -38,15 +38,13 @@ var (
 	currClusterClient *sbch.ClusterClient
 	newClusterClient  *sbch.ClusterClient
 	nodesChangedTime  time.Time
-	skipPbkCheck      bool
 
 	sigCache  = gcache.New(sigCacheMaxCount).Expiration(sigCacheExpiration).Simple().Build()
 	timeCache = gcache.New(timeCacheMaxCount).Expiration(sigCacheExpiration).Simple().Build()
 )
 
-func initRpcClients(_nodesGovAddr string, bootstrapRpcURLs, privateUrls []string, _skipPbkCheck bool) {
+func initRpcClients(_nodesGovAddr string, bootstrapRpcURLs, privateUrls []string) {
 	nodesGovAddr = _nodesGovAddr
-	skipPbkCheck = _skipPbkCheck
 
 	bootstrapClient, err := sbch.NewClusterRpcClient(nodesGovAddr, bootstrapRpcURLs, clientReqTimeout)
 	if err != nil {
@@ -58,7 +56,7 @@ func initRpcClients(_nodesGovAddr string, bootstrapRpcURLs, privateUrls []string
 	}
 
 	sortNodes(allNodes)
-	clusterClient, err := sbch.NewClusterRpcClientOfNodes(nodesGovAddr, allNodes, skipPbkCheck, privateUrls, clientReqTimeout)
+	clusterClient, err := sbch.NewClusterRpcClientOfNodes(nodesGovAddr, allNodes, privateUrls, clientReqTimeout)
 	if err != nil {
 		panic(err)
 	}
@@ -222,7 +220,7 @@ func watchSbchdNodes(privateUrls []string) {
 		if nodesChanged(latestNodes) {
 			newClusterClient = nil
 			clusterClient, err := sbch.NewClusterRpcClientOfNodes(
-				nodesGovAddr, latestNodes, skipPbkCheck, privateUrls, clientReqTimeout)
+				nodesGovAddr, latestNodes, privateUrls, clientReqTimeout)
 			if err != nil {
 				fmt.Println("failed to check sbchd nodes:", err.Error())
 				continue

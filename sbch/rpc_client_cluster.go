@@ -31,7 +31,7 @@ func NewClusterRpcClient(nodesGovAddr string, nodeUrls []string,
 	return &ClusterClient{clients: clients}, nil
 }
 
-func NewClusterRpcClientOfNodes(nodesGovAddr string, nodes []NodeInfo, skipPbkCheck bool,
+func NewClusterRpcClientOfNodes(nodesGovAddr string, nodes []NodeInfo,
 	privateUrls []string, clientReqTimeout time.Duration) (*ClusterClient, error) {
 
 	clients := make([]RpcClient, 0, len(nodes))
@@ -44,7 +44,7 @@ func NewClusterRpcClientOfNodes(nodesGovAddr string, nodes []NodeInfo, skipPbkCh
 		if err != nil {
 			return nil, fmt.Errorf("get pubkey from %s failed: %w", node.RpcUrl, err)
 		}
-		if !skipPbkCheck && sha256.Sum256(pbk) != node.PbkHash {
+		if sha256.Sum256(pbk) != node.PbkHash {
 			return nil, fmt.Errorf("pubkey not match: %s", node.RpcUrl)
 		}
 		clients = append(clients, client)

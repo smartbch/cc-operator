@@ -40,7 +40,7 @@ var (
 
 func Start(serverName, listenAddr, nodesGovAddr, monitorAddrList, signerKeyWIF string, bootstrapRpcURLs []string, privateUrls []string) {
 	loadOrGenKey(signerKeyWIF)
-	initRpcClients(nodesGovAddr, bootstrapRpcURLs, privateUrls, false)
+	initRpcClients(nodesGovAddr, bootstrapRpcURLs, privateUrls)
 	go getAndSignSigHashes()
 	go watchSbchdNodes(privateUrls)
 	go startHttpsServer(serverName, listenAddr, monitorAddrList)
