@@ -245,9 +245,9 @@ func watchSbchdNodes(privateUrls []string) {
 
 func nodesChanged(latestNodes []sbch.NodeInfo) bool {
 	if newClusterClient != nil {
-		return nodesEqual(newClusterClient.AllNodes, latestNodes)
+		return !nodesEqual(newClusterClient.AllNodes, latestNodes)
 	}
-	return nodesEqual(currClusterClient.AllNodes, latestNodes)
+	return !nodesEqual(currClusterClient.AllNodes, latestNodes)
 }
 func nodesEqual(s1, s2 []sbch.NodeInfo) bool {
 	return reflect.DeepEqual(s1, s2)
