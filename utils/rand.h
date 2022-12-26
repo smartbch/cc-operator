@@ -12,27 +12,30 @@
 
 int rdrand_16(uint16_t* x, int retry)
 {
-	uint64_t r;
-	if (retry)
-	{
-		for (int i = 0; i < RETRY_LIMIT; i++)
-		{
-			if (__rndr(&r)==0) {
-				*x = (uint16_t)r;
-				return DRNG_SUCCESS;
-			}
-		}
+	// Well, __rndr does not exist on most ARM chips...
+	// 
+	//uint64_t r;
+	//if (retry)
+	//{
+	//	for (int i = 0; i < RETRY_LIMIT; i++)
+	//	{
+	//		if (__rndr(&r)==0) {
+	//			*x = (uint16_t)r;
+	//			return DRNG_SUCCESS;
+	//		}
+	//	}
 
-		return DRNG_NOT_READY;
-	}
-	else
-	{
-			if (__rndr(&r)==0) {
-				*x = (uint16_t)r;
-				return DRNG_SUCCESS;
-			} else
-				return DRNG_NOT_READY;
-	}
+	//	return DRNG_NOT_READY;
+	//}
+	//else
+	//{
+	//		if (__rndr(&r)==0) {
+	//			*x = (uint16_t)r;
+	//			return DRNG_SUCCESS;
+	//		} else
+	//			return DRNG_NOT_READY;
+	//}
+	return DRNG_SUCCESS;
 }
 
 
