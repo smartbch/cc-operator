@@ -123,6 +123,10 @@ func (cluster *ClusterClient) GetToBeConvertedUtxosForMonitors() ([]*sbchrpctype
 }
 
 func (cluster *ClusterClient) GetFromAllNodes(methodName string) (any, error) {
+	if len(cluster.clients) == 0 {
+		return nil, fmt.Errorf("no clients")
+	}
+
 	nClients := len(cluster.clients)
 	resps := make([]any, nClients)
 	errors := make([]error, nClients)

@@ -862,8 +862,6 @@ github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6Mwd
 github.com/sirupsen/logrus v1.6.0/go.mod h1:7uNnSEd1DgxDLC74fIahvMZmmYsHGZGEOFrfsX/uA88=
 github.com/sirupsen/logrus v1.7.0/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
 github.com/sirupsen/logrus v1.8.1/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
-github.com/smartbch/smartbch v0.4.5-0.20221219040315-3a5d7b5cb1b8 h1:cb0EpYA3g7fw4DW+LK5wxA1/bw4v7JKAKYNJX739HWU=
-github.com/smartbch/smartbch v0.4.5-0.20221219040315-3a5d7b5cb1b8/go.mod h1:+MgWH9/E5H/ZGg8y8+I2qvyIn5irbI6uY+/HeJyS1lU=
 github.com/smartbch/smartbch v0.4.5-0.20221223072312-83ff6e7ddfe3 h1:FtkHlo8L6HDLC9pZjzFx9t7/L6J24h2k2wEgrmj8yM0=
 github.com/smartbch/smartbch v0.4.5-0.20221223072312-83ff6e7ddfe3/go.mod h1:+MgWH9/E5H/ZGg8y8+I2qvyIn5irbI6uY+/HeJyS1lU=
 github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d h1:zE9ykElWQ6/NYmHa3jpm/yHnI4xSofP+UP6SpjHcSeM=
