@@ -80,7 +80,12 @@ func (client *SimpleRpcClient) getNodeCount(ctx context.Context) (uint64, error)
 	if err != nil {
 		return 0, err
 	}
-	return uint256.NewInt(0).SetBytes(nodeCountData).Uint64(), nil
+	if len(nodeCountData) != 32 {
+		err = errors.New("invalid NodeCount data: " + hex.EncodeToString(nodeCountData))
+		return 0, err
+	}
+	nodeCount := uint256.NewInt(0).SetBytes(nodeCountData).Uint64()
+	return nodeCount, nil
 }
 func (client *SimpleRpcClient) getNodeByIdx(n uint64, ctx context.Context) (node NodeInfo, err error) {
 	callData := append(gethcmn.FromHex(getNodeByIdxSel), uint256.NewInt(n).PaddedBytes(32)...)
