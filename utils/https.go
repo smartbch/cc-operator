@@ -42,22 +42,15 @@ func GetQueryParam(r *http.Request, name string) string {
 	return params[0]
 }
 
-func HttpsGet(tlsConfig *tls.Config, url string) []byte {
+func HttpsGet(tlsConfig *tls.Config, url string) ([]byte, error) {
 	client := http.Client{Transport: &http.Transport{TLSClientConfig: tlsConfig}, Timeout: 3 * time.Second}
 	resp, err := client.Get(url)
 	if err != nil {
-		fmt.Println(err)
-		return nil
+		return nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		fmt.Println(resp.Status)
-		return nil
+		return nil, fmt.Errorf("http status: %s", resp.Status)
 	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-	return body
+	return ioutil.ReadAll(resp.Body)
 }

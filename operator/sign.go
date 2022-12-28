@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/bluele/gcache"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/smartbch/cc-operator/sbch"
 	"github.com/smartbch/cc-operator/utils"
@@ -75,7 +76,7 @@ func initRpcClients(_nodesGovAddr string, bootstrapRpcURLs, privateUrls []string
 
 // run this in a goroutine
 func getAndSignSigHashes() {
-	fmt.Println("start to getAndSignSigHashes ...")
+	log.Info("start to getAndSignSigHashes ...")
 	for {
 		time.Sleep(getSigHashesInterval)
 
@@ -98,17 +99,17 @@ func getAndSignSigHashes() {
 }
 
 func getAllSigHashes4Op(rpcClient *sbch.ClusterClient) ([]string, error) {
-	fmt.Println("call GetRedeemingUtxosForOperators ...")
+	log.Info("call GetRedeemingUtxosForOperators ...")
 	redeemingUtxos4Op, err := rpcClient.GetRedeemingUtxosForOperators()
 	if err != nil {
-		fmt.Println("failed to call GetRedeemingUtxosForOperators:", err.Error())
+		log.Error("failed to call GetRedeemingUtxosForOperators:", err.Error())
 		return nil, err
 	}
 
-	fmt.Println("call GetToBeConvertedUtxosForOperators ...")
+	log.Info("call GetToBeConvertedUtxosForOperators ...")
 	toBeConvertedUtxos4Op, err := rpcClient.GetToBeConvertedUtxosForOperators()
 	if err != nil {
-		fmt.Println("failed to call GetToBeConvertedUtxosForOperators:", err.Error())
+		log.Error("failed to call GetToBeConvertedUtxosForOperators:", err.Error())
 		return nil, err
 	}
 
@@ -119,22 +120,22 @@ func getAllSigHashes4Op(rpcClient *sbch.ClusterClient) ([]string, error) {
 	for _, utxo := range toBeConvertedUtxos4Op {
 		sigHashes = append(sigHashes, hex.EncodeToString(utxo.TxSigHash))
 	}
-	fmt.Println("allSigHashes4Op:", sigHashes)
+	log.Info("allSigHashes4Op:", sigHashes)
 	return sigHashes, nil
 }
 
 func getAllSigHashes4Mo(rpcClient *sbch.ClusterClient) ([]string, []string, error) {
-	fmt.Println("call GetRedeemingUtxosForMonitors ...")
+	log.Info("call GetRedeemingUtxosForMonitors ...")
 	redeemingUtxos4Mo, err := rpcClient.GetRedeemingUtxosForMonitors()
 	if err != nil {
-		fmt.Println("failed to call GetRedeemingUtxosForOperators:", err.Error())
+		log.Error("failed to call GetRedeemingUtxosForOperators:", err.Error())
 		return nil, nil, err
 	}
 
-	fmt.Println("call GetToBeConvertedUtxosForMonitors ...")
+	log.Info("call GetToBeConvertedUtxosForMonitors ...")
 	toBeConvertedUtxos4Mo, err := rpcClient.GetToBeConvertedUtxosForMonitors()
 	if err != nil {
-		fmt.Println("failed to call GetToBeConvertedUtxosForMonitors:", err.Error())
+		log.Error("failed to call GetToBeConvertedUtxosForMonitors:", err.Error())
 		return nil, nil, err
 	}
 
@@ -142,13 +143,13 @@ func getAllSigHashes4Mo(rpcClient *sbch.ClusterClient) ([]string, []string, erro
 	for i, utxo := range redeemingUtxos4Mo {
 		redeemingSigHashes[i] = hex.EncodeToString(utxo.TxSigHash)
 	}
-	fmt.Println("redeemingSigHashes4Mo:", redeemingSigHashes)
+	log.Info("redeemingSigHashes4Mo:", redeemingSigHashes)
 
 	toBeConvertedSigHashes := make([]string, len(toBeConvertedUtxos4Mo))
 	for i, utxo := range toBeConvertedUtxos4Mo {
 		toBeConvertedSigHashes[i] = hex.EncodeToString(utxo.TxSigHash)
 	}
-	fmt.Println("toBeConvertedSigHashes4Mo:", toBeConvertedSigHashes)
+	log.Info("toBeConvertedSigHashes4Mo:", toBeConvertedSigHashes)
 	return redeemingSigHashes, toBeConvertedSigHashes, nil
 }
 
@@ -160,14 +161,14 @@ func signSigHashes4Op(allSigHashes4Op []string) {
 
 		sigBytes, err := signSigHashECDSA(sigHashHex)
 		if err != nil {
-			fmt.Println("failed to sign sigHash:", err.Error())
+			log.Error("failed to sign sigHash:", err.Error())
 			continue
 		}
 
-		fmt.Println("sigHash:", sigHashHex, "sig:", hex.EncodeToString(sigBytes))
+		log.Info("sigHash:", sigHashHex, "sig:", hex.EncodeToString(sigBytes))
 		err = sigCache.SetWithExpire(sigHashHex, sigBytes, sigCacheExpiration)
 		if err != nil {
-			fmt.Println("failed to put sig into cache:", err.Error())
+			log.Error("failed to put sig into cache:", err.Error())
 		}
 	}
 }
@@ -183,7 +184,7 @@ func cacheSigHashes4Mo(redeemingSigHashes4Mo, toBeConvertedSigHashes4Mo []string
 
 		err := timeCache.SetWithExpire(sigHashHex, redeemOkTs, timeCacheExpiration)
 		if err != nil {
-			fmt.Println("failed to put sigHash into cache:", err.Error())
+			log.Error("failed to put sigHash into cache:", err.Error())
 		}
 	}
 
@@ -195,32 +196,32 @@ func cacheSigHashes4Mo(redeemingSigHashes4Mo, toBeConvertedSigHashes4Mo []string
 
 		err := timeCache.SetWithExpire(sigHashHex, convertOkTs, timeCacheExpiration)
 		if err != nil {
-			fmt.Println("failed to put sigHash into cache:", err.Error())
+			log.Error("failed to put sigHash into cache:", err.Error())
 		}
 	}
 }
 
 // run this in a goroutine
 func watchSbchdNodes(privateUrls []string) {
-	fmt.Println("start to watchSbchdNodes ...")
+	log.Info("start to watchSbchdNodes ...")
 	// TODO: change to time.Ticker?
 	for {
 		time.Sleep(checkNodesInterval)
 
-		fmt.Println("get latest nodes ...")
+		log.Info("get latest nodes ...")
 		latestNodes, err := currClusterClient.GetSbchdNodesSorted()
 		if err != nil {
-			fmt.Println("failed to get sbchd nodes:", err.Error())
+			log.Error("failed to get sbchd nodes:", err.Error())
 			continue
 		}
 
 		if nodesChanged(latestNodes) {
-			fmt.Println("nodes changed")
+			log.Info("nodes changed")
 			newClusterClient = nil
 			clusterClient, err := sbch.NewClusterRpcClientOfNodes(
 				nodesGovAddr, latestNodes, privateUrls, clientReqTimeout)
 			if err != nil {
-				fmt.Println("failed to check sbchd nodes:", err.Error())
+				log.Error("failed to check sbchd nodes:", err.Error())
 				continue
 			}
 
@@ -228,12 +229,12 @@ func watchSbchdNodes(privateUrls []string) {
 			newClusterClient = clusterClient
 			continue
 		} else {
-			fmt.Println("nodes not changed")
+			log.Info("nodes not changed")
 		}
 
 		if newClusterClient != nil {
 			if time.Now().Sub(nodesChangedTime) > newNodesDelayTime {
-				fmt.Println("switch to new cluster client")
+				log.Info("switch to new cluster client")
 				rpcClientLock.Lock()
 				currClusterClient = newClusterClient
 				newClusterClient = nil

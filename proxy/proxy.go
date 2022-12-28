@@ -8,7 +8,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -17,6 +16,7 @@ import (
 
 	"github.com/edgelesssys/ego/attestation"
 	"github.com/edgelesssys/ego/eclient"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/smartbch/cc-operator/utils"
 )
@@ -32,7 +32,7 @@ func StartProxyServerWithCert(
 		ReadTimeout:  3 * time.Second,
 		WriteTimeout: 5 * time.Second,
 	}
-	fmt.Println("cc-operator proxy listening at:", listenAddr, "...")
+	log.Info("cc-operator proxy listening at:", listenAddr, "...")
 	err := server.ListenAndServeTLS(certFile, keyFile)
 	if err != nil {
 		panic(err)
@@ -52,7 +52,7 @@ func StartProxyServerWithName(operatorUrl, operatorName string, signer, uniqueID
 		WriteTimeout: 5 * time.Second,
 		TLSConfig:    &tlsCfg,
 	}
-	fmt.Println("cc-operator proxy listening at:", listenAddr, "...")
+	log.Info("cc-operator proxy listening at:", listenAddr, "...")
 	err := server.ListenAndServeTLS("", "")
 	if err != nil {
 		panic(err)
@@ -60,7 +60,11 @@ func StartProxyServerWithName(operatorUrl, operatorName string, signer, uniqueID
 }
 
 func newProxy(operatorUrl, operatorName string, signer, uniqueID []byte) *httputil.ReverseProxy {
-	certBytes := verifyOperator(operatorUrl, signer, uniqueID)
+	certBytes, err := verifyOperator(operatorUrl, signer, uniqueID)
+	if err != nil {
+		panic(err)
+	}
+
 	cert, _ := x509.ParseCertificate(certBytes)
 	tlsConfig := &tls.Config{RootCAs: x509.NewCertPool(), ServerName: operatorName}
 	tlsConfig.RootCAs.AddCert(cert)
@@ -75,34 +79,45 @@ func newProxy(operatorUrl, operatorName string, signer, uniqueID []byte) *httput
 	return proxy
 }
 
-func verifyOperator(operatorUrl string, signer, uniqueID []byte) []byte {
+func verifyOperator(operatorUrl string, signer, uniqueID []byte) ([]byte, error) {
 	if !strings.HasPrefix(operatorUrl, "https://") {
 		operatorUrl = "https://" + operatorUrl
 	}
 	tlsConfig := &tls.Config{InsecureSkipVerify: true}
 
-	var certStr string
-	var reportStr string
+	var certHex []byte
+	var reportHex []byte
 	var certBytes []byte
 	var reportBytes []byte
 	var err error
 
-	certStr = string(utils.HttpsGet(tlsConfig, operatorUrl+"/cert?raw=true"))
-	reportStr = string(utils.HttpsGet(tlsConfig, operatorUrl+"/cert-report?raw=true"))
+	certHex, err = utils.HttpsGet(tlsConfig, operatorUrl+"/cert?raw=true")
+	if err != nil {
+		return nil, err
+	}
 
-	certBytes, err = hex.DecodeString(certStr)
+	reportHex, err = utils.HttpsGet(tlsConfig, operatorUrl+"/cert-report?raw=true")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	reportBytes, err = hex.DecodeString(reportStr)
+
+	certBytes, err = hex.DecodeString(string(certHex))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	if err := verifyReport(reportBytes, certBytes, signer, uniqueID); err != nil {
-		panic(err)
+
+	reportBytes, err = hex.DecodeString(string(reportHex))
+	if err != nil {
+		return nil, err
 	}
-	fmt.Printf("verify operator:%s passed\n", operatorUrl)
-	return certBytes
+
+	err = verifyReport(reportBytes, certBytes, signer, uniqueID)
+	if err != nil {
+		return nil, err
+	}
+
+	//fmt.Printf("verify operator:%s passed\n", operatorUrl)
+	return certBytes, nil
 }
 
 func verifyReport(reportBytes, certBytes, signer, uniqueID []byte) error {

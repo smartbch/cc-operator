@@ -3,7 +3,6 @@ package operator
 import (
 	"crypto/ecdsa"
 	"encoding/hex"
-	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -11,6 +10,7 @@ import (
 	gethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/gcash/bchd/bchec"
 	"github.com/gcash/bchutil"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/smartbch/cc-operator/utils"
 	"github.com/smartbch/smartbch/crosschain/covenant"
@@ -54,10 +54,10 @@ func loadOrGenKeyNonEnclave() {
 }
 
 func loadOrGenKeyInEnclave() {
-	fmt.Println("load private key from file:", keyFile)
+	log.Info("load private key from file:", keyFile)
 	fileData, err := os.ReadFile(keyFile)
 	if err != nil {
-		fmt.Printf("read file failed, %s\n", err.Error())
+		log.Error("read file failed", err.Error())
 		if os.IsNotExist(err) {
 			// maybe it's first time to run this enclave app
 			genAndSealPrivKey()
@@ -69,7 +69,7 @@ func loadOrGenKeyInEnclave() {
 	}
 
 	pubKeyBytes = privKey.PubKey().SerializeCompressed()
-	fmt.Printf("pubkey: %s\n", hex.EncodeToString(pubKeyBytes))
+	log.Info("pubkey:", hex.EncodeToString(pubKeyBytes))
 }
 
 func genAndSealPrivKey() {
@@ -78,17 +78,17 @@ func genAndSealPrivKey() {
 }
 
 func genNewPrivKey() {
-	fmt.Println("generate new private key")
+	log.Info("generate new private key")
 	key, err := ecdsa.GenerateKey(bchec.S256(), &utils.RandReader{})
 	if err != nil {
 		panic(err)
 	}
 	privKey = (*bchec.PrivateKey)(key)
-	fmt.Println("generated new private key")
+	log.Info("generated new private key")
 }
 
 func sealPrivKeyToFile() {
-	fmt.Println("seal private key to file:", keyFile)
+	log.Info("seal private key to file:", keyFile)
 	out, err := ecrypto.SealWithUniqueKey(privKey.Serialize(), nil)
 	if err != nil {
 		panic(err)
@@ -97,18 +97,18 @@ func sealPrivKeyToFile() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("saved key to file")
+	log.Info("saved key to file")
 }
 
 func unsealPrivKeyFromFile(fileData []byte) {
-	fmt.Println("unseal private key")
+	log.Info("unseal private key")
 	rawData, err := ecrypto.Unseal(fileData, nil)
 	if err != nil {
-		fmt.Printf("unseal file data failed, %s\n", err.Error())
+		log.Error("unseal file data failed", err.Error())
 		return
 	}
 	privKey, _ = bchec.PrivKeyFromBytes(bchec.S256(), rawData)
-	fmt.Println("loaded key from file")
+	log.Info("loaded key from file")
 }
 
 func signSigHashECDSA(sigHashHex string) ([]byte, error) {

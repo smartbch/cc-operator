@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -16,6 +15,8 @@ import (
 	gethacc "github.com/ethereum/go-ethereum/accounts"
 	gethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/smartbch/cc-operator/utils"
 )
 
@@ -76,9 +77,11 @@ func startHttpsServer(serverName, listenAddr, monitorAddrList string) {
 		WriteTimeout: 5 * time.Second,
 		TLSConfig:    &tlsCfg,
 	}
-	fmt.Println("listening at:", listenAddr, "...")
+	log.Info("listening at:", listenAddr, "...")
 	err := server.ListenAndServeTLS("", "")
-	fmt.Println(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func createHttpHandlers() *http.ServeMux {
@@ -167,7 +170,7 @@ func handleSig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("handleSig:", r.URL.String())
+	log.Info("handleSig:", r.URL.String())
 	hash := utils.GetQueryParam(r, "hash")
 	if len(hash) == 0 {
 		NewErrResp("missing query parameter: hash").WriteTo(w)
