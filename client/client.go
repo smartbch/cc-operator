@@ -109,6 +109,11 @@ func (client *Client) GetPubkeyBytes() (result []byte, err error) {
 	return
 }
 
+func (client *Client) GetOpInfo() (info operator.OpInfo, err error) {
+	err = client.getWithTimeout("/info", &info)
+	return
+}
+
 func (client *Client) Suspend(sig string, ts int64) (result []byte, err error) {
 	pathAndQuery := fmt.Sprintf("/suspend?sig=%s&ts=%d", sig, ts)
 	err = client.getWithTimeout(pathAndQuery, &result)
