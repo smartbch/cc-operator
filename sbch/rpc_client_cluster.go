@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	gethcmn "github.com/ethereum/go-ethereum/common"
+
 	sbchrpctypes "github.com/smartbch/smartbch/rpc/types"
 )
 
@@ -122,6 +124,14 @@ func (cluster *ClusterClient) GetToBeConvertedUtxosForMonitors() ([]*sbchrpctype
 	return result.([]*sbchrpctypes.UtxoInfo), err
 }
 
+func (cluster *ClusterClient) GetMonitors() ([]gethcmn.Address, error) {
+	result, err := cluster.GetFromAllNodes("GetMonitors")
+	if err != nil {
+		return nil, err
+	}
+	return result.([]gethcmn.Address), err
+}
+
 func (cluster *ClusterClient) GetFromAllNodes(methodName string) (any, error) {
 	if len(cluster.clients) == 0 {
 		return nil, fmt.Errorf("no clients")
@@ -175,6 +185,8 @@ func getFromOneNode(client RpcClient, methodName string) (any, error) {
 		return client.GetToBeConvertedUtxosForOperators()
 	case "GetToBeConvertedUtxosForMonitors":
 		return client.GetToBeConvertedUtxosForMonitors()
+	case "GetMonitors":
+		return client.GetMonitors()
 	default:
 		panic("unknown method") // unreachable
 	}

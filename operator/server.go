@@ -7,7 +7,6 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -28,9 +27,8 @@ const (
 )
 
 var (
-	certBytes        []byte
-	suspended        atomic.Value
-	monitorAddresses []gethcmn.Address
+	certBytes []byte
+	suspended atomic.Value
 )
 
 var (
@@ -39,12 +37,12 @@ var (
 	errNotMonitor = errors.New("not monitor")
 )
 
-func Start(serverName, listenAddr, nodesGovAddr, monitorAddrList, signerKeyWIF string, bootstrapRpcURLs []string, privateUrls []string) {
+func Start(serverName, listenAddr, nodesGovAddr, signerKeyWIF string, bootstrapRpcURLs []string, privateUrls []string) {
 	loadOrGenKey(signerKeyWIF)
 	initRpcClients(nodesGovAddr, bootstrapRpcURLs, privateUrls)
 	go getAndSignSigHashes()
-	go watchSbchdNodes(privateUrls)
-	go startHttpsServer(serverName, listenAddr, monitorAddrList)
+	go watchMonitorsAndSbchdNodes(privateUrls)
+	go startHttpsServer(serverName, listenAddr)
 	select {}
 }
 
@@ -60,11 +58,7 @@ func loadOrGenKey(signerKeyWIF string) {
 	}
 }
 
-func startHttpsServer(serverName, listenAddr, monitorAddrList string) {
-	for _, addr := range strings.Split(monitorAddrList, ",") {
-		monitorAddresses = append(monitorAddresses, gethcmn.HexToAddress(addr))
-	}
-
+func startHttpsServer(serverName, listenAddr string) {
 	// Create a TLS config with a self-signed certificate and an embedded report.
 	cert, _, tlsCfg := utils.CreateCertificate(serverName)
 	certBytes = cert
@@ -187,7 +181,9 @@ func handleSig(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleOpInfo(w http.ResponseWriter, r *http.Request) {
-	opInfo := getNodesInfo()
+	opInfo := &OpInfo{}
+	fillMonitorsAndNodesInfo(opInfo)
+
 	opInfo.Status = "ok"
 	if suspended.Load() != nil {
 		opInfo.Status = "suspended"
@@ -246,13 +242,11 @@ func checkSig(ts, sig string) error {
 	}
 
 	addr := crypto.PubkeyToAddress(*pbk)
-	for _, monitor := range monitorAddresses {
-		if addr == monitor {
-			return nil
-		}
+	if !isMonitor(addr) {
+		return errNotMonitor
 	}
 
-	return errNotMonitor
+	return nil
 }
 
 func handleGetRedeemingUtxosForOperators(w http.ResponseWriter, r *http.Request) {

@@ -11,12 +11,11 @@ import (
 )
 
 var (
-	helpFlag        = false
-	serverName      = "cc-operator"
-	listenAddr      = "0.0.0.0:8801"
-	privateRpcURLs  = ""
-	monitorAddrList = ""
-	signerKeyWIF    = ""
+	helpFlag       = false
+	serverName     = "cc-operator"
+	listenAddr     = "0.0.0.0:8801"
+	privateRpcURLs = ""
+	signerKeyWIF   = ""
 
 	// TODO: change this to constant in production mode
 	nodesGovAddr = "0x0000000000000000000000000000000000001234"
@@ -36,7 +35,6 @@ func main() {
 	flag.StringVar(&serverName, "serverName", serverName, "server name to generate TLS certificate")
 	flag.StringVar(&listenAddr, "listenAddr", listenAddr, "listen addr, ip:port")
 	flag.StringVar(&nodesGovAddr, "nodesGovAddr", nodesGovAddr, "address of NodesGov contract")
-	flag.StringVar(&monitorAddrList, "monitorAddrList", monitorAddrList, "comma separated monitor addresses")
 	flag.StringVar(&signerKeyWIF, "signerKeyWIF", signerKeyWIF, "signer key WIF, for integration test only")
 	flag.StringVar(&newFixedBootstrapRpcUrl, "newFixedBootstrapUrl", newFixedBootstrapRpcUrl, "new fixed bootstrap urls with signature separated with comma")
 	flag.StringVar(&privateRpcURLs, "privateRpcUrls", privateRpcURLs, "comma separated private rpc urls")
@@ -53,7 +51,7 @@ func main() {
 		privateRpcURLList = strings.Split(privateRpcURLs, ",")
 	}
 
-	operator.Start(serverName, listenAddr, nodesGovAddr, monitorAddrList, signerKeyWIF, bootstrapRpcURLs, privateRpcURLList)
+	operator.Start(serverName, listenAddr, nodesGovAddr, signerKeyWIF, bootstrapRpcURLs, privateRpcURLList)
 }
 
 func getNewBootstrapRpcPubkey(pbkHex string) []byte {

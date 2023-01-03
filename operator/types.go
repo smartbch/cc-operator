@@ -4,14 +4,17 @@ import (
 	"encoding/json"
 	"net/http"
 
+	gethcmn "github.com/ethereum/go-ethereum/common"
+
 	"github.com/smartbch/cc-operator/sbch"
 )
 
 type OpInfo struct {
-	Status           string          `json:"status"`
-	CurrNodes        []sbch.NodeInfo `json:"currNodes,omitempty"`
-	NewNodes         []sbch.NodeInfo `json:"newNodes,omitempty"`
-	NodesChangedTime int64           `json:"nodesChangedTime,omitempty"`
+	Status           string            `json:"status"`
+	CurrNodes        []sbch.NodeInfo   `json:"currNodes,omitempty"`
+	NewNodes         []sbch.NodeInfo   `json:"newNodes,omitempty"`
+	NodesChangedTime int64             `json:"nodesChangedTime,omitempty"`
+	Monitors         []gethcmn.Address `json:"monitors,omitempty"`
 }
 
 type Resp struct {

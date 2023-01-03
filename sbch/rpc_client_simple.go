@@ -182,6 +182,27 @@ func (client *SimpleRpcClient) GetRedeemableUtxos() ([]*sbchrpctypes.UtxoInfo, e
 }
 
 func (client *SimpleRpcClient) GetRpcPubkey() ([]byte, error) {
+	_, err := client.getCcInfo()
+	if err != nil {
+		return nil, err
+	}
+	return client.sbchRpcClient.CachedRpcPubkey(), nil
+}
+
+func (client *SimpleRpcClient) GetMonitors() ([]gethcmn.Address, error) {
+	ccInfo, err := client.getCcInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	monitors := make([]gethcmn.Address, len(ccInfo.Monitors))
+	for i, monitor := range ccInfo.Monitors {
+		monitors[i] = monitor.Address
+	}
+	return monitors, nil
+}
+
+func (client *SimpleRpcClient) getCcInfo() (*sbchrpctypes.CcInfo, error) {
 	ctx := context.Background()
 	if client.reqTimeout > 0 {
 		var cancelFn context.CancelFunc
@@ -189,10 +210,5 @@ func (client *SimpleRpcClient) GetRpcPubkey() ([]byte, error) {
 		defer cancelFn()
 	}
 
-	_, err := client.sbchRpcClient.CcInfo(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return client.sbchRpcClient.CachedRpcPubkey(), nil
+	return client.sbchRpcClient.CcInfo(ctx)
 }

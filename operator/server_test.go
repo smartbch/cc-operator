@@ -161,9 +161,12 @@ func TestHandleSuspend(t *testing.T) {
 	sig1, _ := crypto.Sign(gethacc.TextHash([]byte(fmt.Sprintf("%s,%d", pk, ts))), key1)
 	sig3, _ := crypto.Sign(gethacc.TextHash([]byte(fmt.Sprintf("%s,%d", pk, ts))), key3)
 
-	monitorAddresses = []gethcmn.Address{addr1, addr2}
+	allMonitorMap = map[gethcmn.Address]bool{
+		addr1: true,
+		addr2: true,
+	}
 	defer func() {
-		monitorAddresses = nil
+		allMonitorMap = map[gethcmn.Address]bool{}
 		suspended = atomic.Value{}
 	}()
 

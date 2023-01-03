@@ -2,6 +2,7 @@ package operator
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/bluele/gcache"
+	gethcmn "github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/smartbch/cc-operator/sbch"
@@ -38,6 +40,9 @@ var (
 	currClusterClient *sbch.ClusterClient
 	newClusterClient  *sbch.ClusterClient
 	nodesChangedTime  time.Time
+	currMonitors      []gethcmn.Address
+	allMonitors       []gethcmn.Address
+	allMonitorMap     = map[gethcmn.Address]bool{}
 
 	sigCache  = gcache.New(sigCacheMaxCount).Expiration(sigCacheExpiration).Simple().Build()
 	timeCache = gcache.New(timeCacheMaxCount).Expiration(sigCacheExpiration).Simple().Build()
@@ -202,11 +207,28 @@ func cacheSigHashes4Mo(redeemingSigHashes4Mo, toBeConvertedSigHashes4Mo []string
 }
 
 // run this in a goroutine
-func watchSbchdNodes(privateUrls []string) {
-	log.Info("start to watchSbchdNodes ...")
+func watchMonitorsAndSbchdNodes(privateUrls []string) {
+	log.Info("start to watchMonitorsAndSbchdNodes ...")
 	// TODO: change to time.Ticker?
 	for {
 		time.Sleep(checkNodesInterval)
+
+		log.Info("get monitors ...")
+		latestMonitors, err := currClusterClient.GetMonitors()
+		if err != nil {
+			log.Error("failed to get monitors:", err.Error())
+		} else if !reflect.DeepEqual(latestMonitors, currMonitors) {
+			log.Info("monitors changed:", toJSON(latestMonitors))
+			rpcClientLock.Lock()
+			currMonitors = latestMonitors
+			for _, monitor := range latestMonitors {
+				if !allMonitorMap[monitor] {
+					allMonitorMap[monitor] = true
+					allMonitors = append(allMonitors, monitor)
+				}
+			}
+			rpcClientLock.Unlock()
+		}
 
 		log.Info("get latest nodes ...")
 		latestNodes, err := currClusterClient.GetSbchdNodesSorted()
@@ -216,7 +238,7 @@ func watchSbchdNodes(privateUrls []string) {
 		}
 
 		if nodesChanged(latestNodes) {
-			log.Info("nodes changed")
+			log.Info("nodes changed:", toJSON(latestNodes))
 			newClusterClient = nil
 			clusterClient, err := sbch.NewClusterRpcClientOfNodes(
 				nodesGovAddr, latestNodes, privateUrls, clientReqTimeout)
@@ -284,16 +306,28 @@ func getSig(sigHashHex string) ([]byte, error) {
 	return sig, nil
 }
 
-func getNodesInfo() (nodesInfo OpInfo) {
+func isMonitor(addr gethcmn.Address) bool {
 	rpcClientLock.RLock()
 	defer rpcClientLock.RUnlock()
 
+	return allMonitorMap[addr]
+}
+
+func fillMonitorsAndNodesInfo(opInfo *OpInfo) {
+	rpcClientLock.RLock()
+	defer rpcClientLock.RUnlock()
+
+	opInfo.Monitors = allMonitors
 	if currClusterClient != nil {
-		nodesInfo.CurrNodes = currClusterClient.AllNodes
+		opInfo.CurrNodes = currClusterClient.AllNodes
 	}
 	if newClusterClient != nil {
-		nodesInfo.NewNodes = newClusterClient.AllNodes
-		nodesInfo.NodesChangedTime = nodesChangedTime.Unix()
+		opInfo.NewNodes = newClusterClient.AllNodes
+		opInfo.NodesChangedTime = nodesChangedTime.Unix()
 	}
-	return nodesInfo
+}
+
+func toJSON(v any) string {
+	bs, _ := json.Marshal(v)
+	return string(bs)
 }

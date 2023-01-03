@@ -12,6 +12,7 @@ type RpcClient interface {
 	GetRedeemingUtxosForMonitors() ([]*sbchrpctypes.UtxoInfo, error)
 	GetToBeConvertedUtxosForOperators() ([]*sbchrpctypes.UtxoInfo, error)
 	GetToBeConvertedUtxosForMonitors() ([]*sbchrpctypes.UtxoInfo, error)
+	GetMonitors() ([]gethcmn.Address, error)
 	GetRpcPubkey() ([]byte, error)
 }
 
