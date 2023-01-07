@@ -180,6 +180,20 @@ func (client *SimpleRpcClient) GetRedeemableUtxos() ([]*sbchrpctypes.UtxoInfo, e
 	}
 	return utxoInfos.Infos, nil
 }
+func (client *SimpleRpcClient) GetLostAndFoundUtxos() ([]*sbchrpctypes.UtxoInfo, error) {
+	ctx := context.Background()
+	if client.reqTimeout > 0 {
+		var cancelFn context.CancelFunc
+		ctx, cancelFn = context.WithTimeout(ctx, client.reqTimeout)
+		defer cancelFn()
+	}
+
+	utxoInfos, err := client.sbchRpcClient.LostAndFoundUtxos(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return utxoInfos.Infos, nil
+}
 
 func (client *SimpleRpcClient) GetRpcPubkey() ([]byte, error) {
 	_, err := client.getCcInfo()
