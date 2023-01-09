@@ -29,6 +29,7 @@ const (
 var (
 	certBytes []byte
 	suspended atomic.Value
+	withChaos bool
 )
 
 var (
@@ -37,7 +38,11 @@ var (
 	errNotMonitor = errors.New("not monitor")
 )
 
-func Start(serverName, listenAddr, nodesGovAddr, signerKeyWIF string, bootstrapRpcURLs []string, privateUrls []string) {
+func Start(serverName, listenAddr, nodesGovAddr, signerKeyWIF string,
+	bootstrapRpcURLs []string, privateUrls []string,
+	_withChaos bool) {
+
+	withChaos = _withChaos
 	loadOrGenKey(signerKeyWIF)
 	initRpcClients(nodesGovAddr, bootstrapRpcURLs, privateUrls)
 	go getAndSignSigHashes()
@@ -251,17 +256,37 @@ func checkSig(ts, sig string) error {
 
 func handleGetRedeemingUtxosForOperators(w http.ResponseWriter, r *http.Request) {
 	utxos, err := currClusterClient.GetRedeemingUtxosForOperators()
+	if withChaos && err == nil {
+		if n := len(utxos); n > 0 {
+			utxos = utxos[:n-1]
+		}
+	}
 	NewResp(utxos, err).WriteTo(w)
 }
 func handleGetRedeemingUtxosForMonitors(w http.ResponseWriter, r *http.Request) {
 	utxos, err := currClusterClient.GetRedeemingUtxosForMonitors()
+	if withChaos && err == nil {
+		if n := len(utxos); n > 0 {
+			utxos = utxos[:n-1]
+		}
+	}
 	NewResp(utxos, err).WriteTo(w)
 }
 func handleGetToBeConvertedUtxosForOperators(w http.ResponseWriter, r *http.Request) {
 	utxos, err := currClusterClient.GetToBeConvertedUtxosForOperators()
+	if withChaos && err == nil {
+		if n := len(utxos); n > 0 {
+			utxos = utxos[:n-1]
+		}
+	}
 	NewResp(utxos, err).WriteTo(w)
 }
 func handleGetToBeConvertedUtxosForMonitors(w http.ResponseWriter, r *http.Request) {
 	utxos, err := currClusterClient.GetToBeConvertedUtxosForMonitors()
+	if withChaos && err == nil {
+		if n := len(utxos); n > 0 {
+			utxos = utxos[:n-1]
+		}
+	}
 	NewResp(utxos, err).WriteTo(w)
 }
