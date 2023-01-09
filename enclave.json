@@ -1,0 +1,19 @@
+{
+  "exe": "cc-operator",
+  "key": "private.pem",
+  "debug": true,
+  "heapSize": 512,
+  "executableHeap": false,
+  "productID": 1,
+  "securityVersion": 1,
+  "mounts": [
+    {
+      "source": "/home/azureuser/smart_bch/cc-operator",
+      "target": "/data",
+      "type": "hostfs",
+      "readOnly": false
+    }
+  ],
+  "env": null,
+  "files": null
+}

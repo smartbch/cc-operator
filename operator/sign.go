@@ -49,6 +49,9 @@ var (
 )
 
 func initRpcClients(_nodesGovAddr string, bootstrapRpcURLs, privateUrls []string) {
+	log.Info("initRpcClients, nodesGovAddr:", _nodesGovAddr,
+		", bootstrapRpcURLs:", bootstrapRpcURLs, ", privateUrls:", privateUrls)
+
 	nodesGovAddr = _nodesGovAddr
 
 	// create bootstrapClient and use it to get all nodes

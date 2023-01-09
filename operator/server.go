@@ -20,8 +20,6 @@ import (
 )
 
 const (
-	integrationTestMode = true // set this to false in production mode
-
 	suspendTsDiffMaxSeconds = 60
 	attestationProviderURL  = "https://shareduks.uks.attest.azure.net"
 )
@@ -256,7 +254,7 @@ func checkSig(ts, sig string) error {
 
 func handleGetRedeemingUtxosForOperators(w http.ResponseWriter, r *http.Request) {
 	utxos, err := currClusterClient.GetRedeemingUtxosForOperators()
-	if withChaos && err == nil {
+	if integrationTestMode && withChaos && err == nil {
 		if n := len(utxos); n > 0 {
 			utxos = utxos[:n-1]
 		}
@@ -265,7 +263,7 @@ func handleGetRedeemingUtxosForOperators(w http.ResponseWriter, r *http.Request)
 }
 func handleGetRedeemingUtxosForMonitors(w http.ResponseWriter, r *http.Request) {
 	utxos, err := currClusterClient.GetRedeemingUtxosForMonitors()
-	if withChaos && err == nil {
+	if integrationTestMode && withChaos && err == nil {
 		if n := len(utxos); n > 0 {
 			utxos = utxos[:n-1]
 		}
@@ -274,7 +272,7 @@ func handleGetRedeemingUtxosForMonitors(w http.ResponseWriter, r *http.Request) 
 }
 func handleGetToBeConvertedUtxosForOperators(w http.ResponseWriter, r *http.Request) {
 	utxos, err := currClusterClient.GetToBeConvertedUtxosForOperators()
-	if withChaos && err == nil {
+	if integrationTestMode && withChaos && err == nil {
 		if n := len(utxos); n > 0 {
 			utxos = utxos[:n-1]
 		}
@@ -283,7 +281,7 @@ func handleGetToBeConvertedUtxosForOperators(w http.ResponseWriter, r *http.Requ
 }
 func handleGetToBeConvertedUtxosForMonitors(w http.ResponseWriter, r *http.Request) {
 	utxos, err := currClusterClient.GetToBeConvertedUtxosForMonitors()
-	if withChaos && err == nil {
+	if integrationTestMode && withChaos && err == nil {
 		if n := len(utxos); n > 0 {
 			utxos = utxos[:n-1]
 		}
