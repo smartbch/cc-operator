@@ -39,7 +39,7 @@ func main() {
 	flag.StringVar(&newFixedBootstrapRpcUrl, "newFixedBootstrapUrl", newFixedBootstrapRpcUrl, "new fixed bootstrap urls with signature separated with comma")
 	flag.StringVar(&privateRpcURLs, "privateRpcUrls", privateRpcURLs, "comma separated private rpc urls")
 	flag.StringVar(&signerKeyWIF, "signerKeyWIF", signerKeyWIF, "signer key WIF, for integration test only")
-	flag.BoolVar(&withChaos, "injectChaos", withChaos, "return chaos, for integration test only")
+	flag.BoolVar(&withChaos, "withChaos", withChaos, "return chaos, for integration test only")
 
 	flag.Parse()
 	if helpFlag {
