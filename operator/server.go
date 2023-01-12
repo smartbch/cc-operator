@@ -127,6 +127,10 @@ func handleCertReport(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlePubKey(w http.ResponseWriter, r *http.Request) {
+	if utils.GetQueryParam(r, "raw") != "" {
+		w.Write(pubKeyBytes)
+		return
+	}
 	NewOkResp("0x" + hex.EncodeToString(pubKeyBytes)).WriteTo(w)
 }
 
@@ -143,6 +147,10 @@ func handlePubkeyReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if utils.GetQueryParam(r, "raw") != "" {
+		w.Write(report)
+		return
+	}
 	NewOkResp("0x" + hex.EncodeToString(report)).WriteTo(w)
 }
 
