@@ -25,9 +25,11 @@ const (
 )
 
 var (
-	certBytes []byte
-	suspended atomic.Value
-	withChaos bool
+	pubKeyBytes []byte
+	certBytes   []byte
+	suspended   atomic.Value
+	withChaos   bool
+	signer      *txSigner
 )
 
 var (
@@ -37,28 +39,26 @@ var (
 )
 
 func Start(serverName, listenAddr, nodesGovAddr, signerKeyWIF string,
-	bootstrapRpcURLs []string, privateUrls []string,
-	_withChaos bool) {
+	bootstrapRpcURLs []string, privateUrls []string, _withChaos bool) {
 
 	withChaos = _withChaos
-	loadOrGenKey(signerKeyWIF)
-	initRpcClients(nodesGovAddr, bootstrapRpcURLs, privateUrls)
-	go getAndSignSigHashes()
-	go watchMonitorsAndSbchdNodes(privateUrls)
+
+	privKey, pbkBytes, err := loadOrGenKey(signerKeyWIF)
+	if err != nil {
+		panic(err)
+	}
+	pubKeyBytes = pbkBytes
+
+	sbchClient, err := newSbchClient(nodesGovAddr, bootstrapRpcURLs, privateUrls)
+	if err != nil {
+		panic(err)
+	}
+	signer = newSigner(privKey, sbchClient)
+
+	go sbchClient.watchMonitorsAndSbchdNodes()
+	go signer.getAndSignSigHashes()
 	go startHttpsServer(serverName, listenAddr)
 	select {}
-}
-
-func loadOrGenKey(signerKeyWIF string) {
-	if integrationTestMode {
-		if signerKeyWIF != "" {
-			loadKeyFromWIF(signerKeyWIF)
-		} else {
-			loadOrGenKeyNonEnclave()
-		}
-	} else {
-		loadOrGenKeyInEnclave()
-	}
 }
 
 func startHttpsServer(serverName, listenAddr string) {
@@ -182,7 +182,7 @@ func handleSig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sig, err := getSig(hash)
+	sig, err := signer.getSig(hash)
 	if err != nil {
 		NewErrResp("no signature found:" + err.Error()).WriteTo(w)
 		return
@@ -193,7 +193,7 @@ func handleSig(w http.ResponseWriter, r *http.Request) {
 
 func handleOpInfo(w http.ResponseWriter, r *http.Request) {
 	opInfo := &OpInfo{}
-	fillMonitorsAndNodesInfo(opInfo)
+	signer.fillMonitorsAndNodesInfo(opInfo)
 
 	opInfo.Status = "ok"
 	if suspended.Load() != nil {
@@ -253,7 +253,7 @@ func checkSig(ts, sig string) error {
 	}
 
 	addr := crypto.PubkeyToAddress(*pbk)
-	if !isMonitor(addr) {
+	if !signer.isMonitor(addr) {
 		return errNotMonitor
 	}
 
@@ -261,7 +261,7 @@ func checkSig(ts, sig string) error {
 }
 
 func handleGetRedeemingUtxosForOperators(w http.ResponseWriter, r *http.Request) {
-	utxos, err := currClusterClient.GetRedeemingUtxosForOperators()
+	utxos, err := signer.sbchClient.currClusterClient.GetRedeemingUtxosForOperators()
 	if integrationTestMode && withChaos && err == nil {
 		if n := len(utxos); n > 0 {
 			utxos = utxos[:n-1]
@@ -270,7 +270,7 @@ func handleGetRedeemingUtxosForOperators(w http.ResponseWriter, r *http.Request)
 	NewResp(utxos, err).WriteTo(w)
 }
 func handleGetRedeemingUtxosForMonitors(w http.ResponseWriter, r *http.Request) {
-	utxos, err := currClusterClient.GetRedeemingUtxosForMonitors()
+	utxos, err := signer.sbchClient.currClusterClient.GetRedeemingUtxosForMonitors()
 	if integrationTestMode && withChaos && err == nil {
 		if n := len(utxos); n > 0 {
 			utxos = utxos[:n-1]
@@ -279,7 +279,7 @@ func handleGetRedeemingUtxosForMonitors(w http.ResponseWriter, r *http.Request) 
 	NewResp(utxos, err).WriteTo(w)
 }
 func handleGetToBeConvertedUtxosForOperators(w http.ResponseWriter, r *http.Request) {
-	utxos, err := currClusterClient.GetToBeConvertedUtxosForOperators()
+	utxos, err := signer.sbchClient.currClusterClient.GetToBeConvertedUtxosForOperators()
 	if integrationTestMode && withChaos && err == nil {
 		if n := len(utxos); n > 0 {
 			utxos = utxos[:n-1]
@@ -288,7 +288,7 @@ func handleGetToBeConvertedUtxosForOperators(w http.ResponseWriter, r *http.Requ
 	NewResp(utxos, err).WriteTo(w)
 }
 func handleGetToBeConvertedUtxosForMonitors(w http.ResponseWriter, r *http.Request) {
-	utxos, err := currClusterClient.GetToBeConvertedUtxosForMonitors()
+	utxos, err := signer.sbchClient.currClusterClient.GetToBeConvertedUtxosForMonitors()
 	if integrationTestMode && withChaos && err == nil {
 		if n := len(utxos); n > 0 {
 			utxos = utxos[:n-1]

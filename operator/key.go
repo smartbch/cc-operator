@@ -7,114 +7,137 @@ import (
 	"os"
 
 	"github.com/edgelesssys/ego/ecrypto"
-	gethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/gcash/bchd/bchec"
 	"github.com/gcash/bchutil"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/smartbch/cc-operator/utils"
-	"github.com/smartbch/smartbch/crosschain/covenant"
 )
 
-const (
-	keyFile = "/data/key.txt"
-)
+func loadOrGenKey(signerKeyWIF string) (privKey *bchec.PrivateKey, pbkBytes []byte, err error) {
+	if !integrationTestMode {
+		privKey, err = loadOrGenKeyInEnclave()
+	} else {
+		if signerKeyWIF != "" {
+			privKey, err = loadKeyFromWIF(signerKeyWIF)
+		} else {
+			privKey, err = loadOrGenKeyNonEnclave()
+		}
+	}
 
-var (
-	privKey     *bchec.PrivateKey
-	pubKeyBytes []byte // compressed
-)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	pbkBytes = privKey.PubKey().SerializeCompressed()
+	log.Info("pubkey:", hex.EncodeToString(pbkBytes))
+	return
+}
 
 // only used for testing
-func loadKeyFromWIF(wifStr string) {
+func loadKeyFromWIF(wifStr string) (*bchec.PrivateKey, error) {
 	wif, err := bchutil.DecodeWIF(wifStr)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-
-	privKey = wif.PrivKey
-	pubKeyBytes = privKey.PubKey().SerializeCompressed()
+	return wif.PrivKey, nil
 }
 
 // only used for testing
-func loadOrGenKeyNonEnclave() {
+func loadOrGenKeyNonEnclave() (*bchec.PrivateKey, error) {
 	fileData, err := os.ReadFile(keyFile)
 	if err == nil {
-		privKey, _ = bchec.PrivKeyFromBytes(bchec.S256(), fileData)
-		pubKeyBytes = privKey.PubKey().SerializeCompressed()
-		return
+		privKey, _ := bchec.PrivKeyFromBytes(bchec.S256(), fileData)
+		return privKey, nil
 	}
 	if os.IsNotExist(err) {
-		genNewPrivKey()
-		_ = ioutil.WriteFile(keyFile, privKey.Serialize(), 0600)
-		pubKeyBytes = privKey.PubKey().SerializeCompressed()
-		return
+		privKey, err := genNewPrivKey()
+		if err == nil {
+			err = ioutil.WriteFile(keyFile, privKey.Serialize(), 0600)
+		}
+		return privKey, err
 	}
-	panic(err)
+	return nil, err
 }
 
-func loadOrGenKeyInEnclave() {
+func loadOrGenKeyInEnclave() (privKey *bchec.PrivateKey, err error) {
 	log.Info("load private key from file:", keyFile)
-	fileData, err := os.ReadFile(keyFile)
-	if err != nil {
-		log.Error("read file failed", err.Error())
-		if os.IsNotExist(err) {
+	fileData, _err := os.ReadFile(keyFile)
+	if _err != nil {
+		log.Error("read file failed", _err.Error())
+		if os.IsNotExist(_err) {
 			// maybe it's first time to run this enclave app
-			genAndSealPrivKey()
+			privKey, err = genAndSealPrivKey()
+			if err != nil {
+				return
+			}
 		} else {
-			panic(err)
+			err = _err
+			return
 		}
 	} else {
-		unsealPrivKeyFromFile(fileData)
+		privKey = unsealPrivKeyFromFile(fileData)
 	}
 
-	pubKeyBytes = privKey.PubKey().SerializeCompressed()
-	log.Info("pubkey:", hex.EncodeToString(pubKeyBytes))
+	return
 }
 
-func genAndSealPrivKey() {
-	genNewPrivKey()
-	sealPrivKeyToFile()
+func genAndSealPrivKey() (*bchec.PrivateKey, error) {
+	privKey, err := genNewPrivKey()
+	if err != nil {
+		return nil, err
+	}
+
+	err = sealPrivKeyToFile(privKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return privKey, nil
 }
 
-func genNewPrivKey() {
+func genNewPrivKey() (*bchec.PrivateKey, error) {
 	log.Info("generate new private key")
 	key, err := ecdsa.GenerateKey(bchec.S256(), &utils.RandReader{})
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	privKey = (*bchec.PrivateKey)(key)
+	privKey := (*bchec.PrivateKey)(key)
 	log.Info("generated new private key")
+	return privKey, nil
 }
 
-func sealPrivKeyToFile() {
+func sealPrivKeyToFile(privKey *bchec.PrivateKey) error {
 	log.Info("seal private key to file:", keyFile)
 	out, err := ecrypto.SealWithUniqueKey(privKey.Serialize(), nil)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	err = os.WriteFile(keyFile, out, 0600)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	log.Info("saved key to file")
+	return nil
 }
 
-func unsealPrivKeyFromFile(fileData []byte) {
+func unsealPrivKeyFromFile(fileData []byte) *bchec.PrivateKey {
 	log.Info("unseal private key")
 	rawData, err := ecrypto.Unseal(fileData, nil)
 	if err != nil {
 		log.Error("unseal file data failed", err.Error())
-		return
+		return nil
 	}
-	privKey, _ = bchec.PrivKeyFromBytes(bchec.S256(), rawData)
+	privKey, _ := bchec.PrivKeyFromBytes(bchec.S256(), rawData)
 	log.Info("loaded key from file")
+	return privKey
 }
 
-func signSigHashECDSA(sigHashHex string) ([]byte, error) {
-	sigHashBytes := gethcmn.FromHex(sigHashHex)
-	return covenant.SignRedeemTxSigHashECDSA(privKey, sigHashBytes)
-}
+//
+//func signSigHashECDSA(sigHashHex string) ([]byte, error) {
+//	sigHashBytes := gethcmn.FromHex(sigHashHex)
+//	return covenant.SignRedeemTxSigHashECDSA(privKey, sigHashBytes)
+//}
 
 //func signSigHashSchnorr(sigHashHex string) ([]byte, error) {
 //	sigHashBytes := gethcmn.FromHex(sigHashHex)

@@ -20,6 +20,11 @@ import (
 	"github.com/smartbch/cc-operator/utils"
 )
 
+func TestInit(t *testing.T) {
+	sbchClient := &sbchRpcClient{}
+	signer = newSigner(nil, sbchClient)
+}
+
 func TestHandleCert(t *testing.T) {
 	oldCertBytes := certBytes
 	certBytes = []byte{0x12, 0x34}
@@ -62,8 +67,8 @@ func TestHandleSig(t *testing.T) {
 			mustCallHandler(path))
 	}
 
-	require.NoError(t, sigCache.Set("1234", []byte{0x56, 0x78}))
-	timeCache.Set("1234", utils.GetTimestampFromTSC()-10)
+	require.NoError(t, signer.sigCache.Set("1234", []byte{0x56, 0x78}))
+	signer.timeCache.Set("1234", utils.GetTimestampFromTSC()-10)
 
 	for _, path := range []string{"/sig?hash=0x4321", "/sig?hash=4321"} {
 		require.Equal(t, `{"success":false,"error":"no signature found:Key not found."}`,
@@ -77,8 +82,8 @@ func TestHandleSig(t *testing.T) {
 }
 
 func TestHandleCurrNodes(t *testing.T) {
-	_currClusterClient := currClusterClient
-	currClusterClient = &sbch.ClusterClient{
+	_currClusterClient := signer.sbchClient.currClusterClient
+	signer.sbchClient.currClusterClient = &sbch.ClusterClient{
 		AllNodes: []sbch.NodeInfo{
 			{
 				ID:      1234,
@@ -88,15 +93,15 @@ func TestHandleCurrNodes(t *testing.T) {
 			},
 		},
 	}
-	defer func() { currClusterClient = _currClusterClient }()
+	defer func() { signer.sbchClient.currClusterClient = _currClusterClient }()
 
 	expected := `{"success":true,"result":{"status":"ok","currNodes":[{"id":1234,"pbkHash":"0xce12340000000000000000000000000000000000000000000000000000000000","rpcUrl":"rpc1234","intro":"node1234"}]}}`
 	require.Equal(t, expected, mustCallHandler("/info"))
 }
 
 func TestHandleNewNodes(t *testing.T) {
-	_currClusterClient := currClusterClient
-	currClusterClient = &sbch.ClusterClient{
+	_currClusterClient := signer.sbchClient.currClusterClient
+	signer.sbchClient.currClusterClient = &sbch.ClusterClient{
 		AllNodes: []sbch.NodeInfo{
 			{
 				ID:      1234,
@@ -106,9 +111,9 @@ func TestHandleNewNodes(t *testing.T) {
 			},
 		},
 	}
-	_newClusterClient := newClusterClient
-	nodesChangedTime = time.Unix(1671681687, 0)
-	newClusterClient = &sbch.ClusterClient{
+	_newClusterClient := signer.sbchClient.newClusterClient
+	signer.sbchClient.nodesChangedTime = time.Unix(1671681687, 0)
+	signer.sbchClient.newClusterClient = &sbch.ClusterClient{
 		AllNodes: []sbch.NodeInfo{
 			{
 				ID:      2345,
@@ -119,8 +124,8 @@ func TestHandleNewNodes(t *testing.T) {
 		},
 	}
 	defer func() {
-		currClusterClient = _currClusterClient
-		newClusterClient = _newClusterClient
+		signer.sbchClient.currClusterClient = _currClusterClient
+		signer.sbchClient.newClusterClient = _newClusterClient
 	}()
 
 	expected := `{"success":true,"result":{"status":"ok","currNodes":[{"id":1234,"pbkHash":"0xce12340000000000000000000000000000000000000000000000000000000000","rpcUrl":"rpc1234","intro":"node1234"}],"newNodes":[{"id":2345,"pbkHash":"0xce23450000000000000000000000000000000000000000000000000000000000","rpcUrl":"rpc2345","intro":"node2345"}],"nodesChangedTime":1671681687}}`
@@ -161,12 +166,12 @@ func TestHandleSuspend(t *testing.T) {
 	sig1, _ := crypto.Sign(gethacc.TextHash([]byte(fmt.Sprintf("%s,%d", pk, ts))), key1)
 	sig3, _ := crypto.Sign(gethacc.TextHash([]byte(fmt.Sprintf("%s,%d", pk, ts))), key3)
 
-	allMonitorMap = map[gethcmn.Address]bool{
+	signer.sbchClient.allMonitorMap = map[gethcmn.Address]bool{
 		addr1: true,
 		addr2: true,
 	}
 	defer func() {
-		allMonitorMap = map[gethcmn.Address]bool{}
+		signer.sbchClient.allMonitorMap = map[gethcmn.Address]bool{}
 		suspended = atomic.Value{}
 	}()
 
