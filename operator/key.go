@@ -15,8 +15,12 @@ import (
 )
 
 func loadOrGenKey(signerKeyWIF string) (privKey *bchec.PrivateKey, pbkBytes []byte, err error) {
-	if !integrationTestMode {
-		privKey, err = loadOrGenKeyInEnclave()
+	if sgxMode {
+		if signerKeyWIF != "" && integrationTestMode {
+			privKey, err = loadKeyFromWIF(signerKeyWIF)
+		} else {
+			privKey, err = loadOrGenKeyInEnclave()
+		}
 	} else {
 		if signerKeyWIF != "" {
 			privKey, err = loadKeyFromWIF(signerKeyWIF)
@@ -36,6 +40,7 @@ func loadOrGenKey(signerKeyWIF string) (privKey *bchec.PrivateKey, pbkBytes []by
 
 // only used for testing
 func loadKeyFromWIF(wifStr string) (*bchec.PrivateKey, error) {
+	log.Info("load private key from WIF")
 	wif, err := bchutil.DecodeWIF(wifStr)
 	if err != nil {
 		return nil, err
@@ -45,6 +50,7 @@ func loadKeyFromWIF(wifStr string) (*bchec.PrivateKey, error) {
 
 // only used for testing
 func loadOrGenKeyNonEnclave() (*bchec.PrivateKey, error) {
+	log.Info("load private key from file:", keyFile)
 	fileData, err := os.ReadFile(keyFile)
 	if err == nil {
 		privKey, _ := bchec.PrivKeyFromBytes(bchec.S256(), fileData)
@@ -61,7 +67,7 @@ func loadOrGenKeyNonEnclave() (*bchec.PrivateKey, error) {
 }
 
 func loadOrGenKeyInEnclave() (privKey *bchec.PrivateKey, err error) {
-	log.Info("load private key from file:", keyFile)
+	log.Info("load sealed private key from file:", keyFile)
 	fileData, _err := os.ReadFile(keyFile)
 	if _err != nil {
 		log.Error("read file failed", _err.Error())
