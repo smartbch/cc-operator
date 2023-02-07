@@ -107,8 +107,8 @@ func handleCert(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleCertReport(w http.ResponseWriter, r *http.Request) {
-	if integrationTestMode {
-		NewErrResp("integration test mode").WriteTo(w)
+	if !sgxMode {
+		NewErrResp("non-SGX mode").WriteTo(w)
 		return
 	}
 
@@ -135,8 +135,8 @@ func handlePubKey(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlePubkeyReport(w http.ResponseWriter, r *http.Request) {
-	if integrationTestMode {
-		NewErrResp("integration test mode").WriteTo(w)
+	if !sgxMode {
+		NewErrResp("non-SGX mode").WriteTo(w)
 		return
 	}
 
@@ -155,8 +155,8 @@ func handlePubkeyReport(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlePubkeyJwt(w http.ResponseWriter, r *http.Request) {
-	if integrationTestMode {
-		NewErrResp("integration test mode").WriteTo(w)
+	if !sgxMode {
+		NewErrResp("non-SGX mode").WriteTo(w)
 		return
 	}
 

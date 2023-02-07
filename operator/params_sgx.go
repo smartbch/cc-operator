@@ -3,5 +3,6 @@
 package operator
 
 const (
-	integrationTestMode = false
+	integrationTestMode = true // TODO: change this to false
+	sgxMode             = true
 )

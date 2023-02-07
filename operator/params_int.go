@@ -4,4 +4,5 @@ package operator
 
 const (
 	integrationTestMode = true
+	sgxMode             = false
 )

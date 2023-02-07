@@ -35,8 +35,8 @@ func TestHandleCert(t *testing.T) {
 }
 
 func TestHandleCertReport(t *testing.T) {
-	require.True(t, integrationTestMode)
-	require.Equal(t, `{"success":false,"error":"integration test mode"}`,
+	require.True(t, !sgxMode)
+	require.Equal(t, `{"success":false,"error":"non-SGX mode"}`,
 		mustCallHandler("/cert-report"))
 }
 
@@ -50,14 +50,14 @@ func TestHandlePubKey(t *testing.T) {
 }
 
 func TestHandlePubkeyReport(t *testing.T) {
-	require.True(t, integrationTestMode)
-	require.Equal(t, `{"success":false,"error":"integration test mode"}`,
+	require.True(t, !sgxMode)
+	require.Equal(t, `{"success":false,"error":"non-SGX mode"}`,
 		mustCallHandler("/pubkey-report"))
 }
 
 func TestHandleJwtToken(t *testing.T) {
-	require.True(t, integrationTestMode)
-	require.Equal(t, `{"success":false,"error":"integration test mode"}`,
+	require.True(t, !sgxMode)
+	require.Equal(t, `{"success":false,"error":"non-SGX mode"}`,
 		mustCallHandler("/pubkey-jwt"))
 }
 
