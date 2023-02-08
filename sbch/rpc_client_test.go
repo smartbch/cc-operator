@@ -18,7 +18,8 @@ import (
 )
 
 const (
-	testNodesGovAddr     = "0x8f1Cc6B6f276B776f3b7dB417c65fE356a164715"
+	testNodesGovAddr = "0x8f1Cc6B6f276B776f3b7dB417c65fE356a164715"
+
 	getNodeCountCallData = `{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{"data":"0x39bf397e","from":"0x0000000000000000000000000000000000000000","to":"0x8f1cc6b6f276b776f3b7db417c65fe356a164715"},"latest"]}`
 	getNodeCountRetData  = `{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000003"}`
 	getNode0CallData     = `{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{"data":"0x1c53c2800000000000000000000000000000000000000000000000000000000000000000","from":"0x0000000000000000000000000000000000000000","to":"0x8f1cc6b6f276b776f3b7db417c65fe356a164715"},"latest"]}`
@@ -37,32 +38,32 @@ const (
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
-	"signature": "0x94ee995e0006ea0bf9b7e47c6b7153d9f62bab44b41e19ea154a415a93ee686c67d6ec3ce543030a8054efa3ecde24928cb7e26b0dee82c56be294af447279a3",
-	"infos": [
-		{
-		  "ownerOfLost": "0x1100000000000000000000000000000000000000",
-		  "covenantAddr": "0x1200000000000000000000000000000000000000",
-		  "isRedeemed": false,
-		  "redeemTarget": "0x1300000000000000000000000000000000000000",
-		  "expectedSignTime": 1665561734,
-		  "txid": "0x1400000000000000000000000000000000000000000000000000000000000000",
-		  "index": 21,
-		  "amount": "0x16",
-		  "txSigHash": "0x17"
-		},
-		{
-		  "ownerOfLost": "0x2100000000000000000000000000000000000000",
-		  "covenantAddr": "0x2200000000000000000000000000000000000000",
-		  "isRedeemed": true,
-		  "redeemTarget": "0x2300000000000000000000000000000000000000",
-		  "expectedSignTime": 1665561734,
-		  "txid": "0x2400000000000000000000000000000000000000000000000000000000000000",
-		  "index": 37,
-		  "amount": "0x26",
-		  "txSigHash": "0x27"
-		}
-	  ]
-  	}
+    "signature": "0x94ee995e0006ea0bf9b7e47c6b7153d9f62bab44b41e19ea154a415a93ee686c67d6ec3ce543030a8054efa3ecde24928cb7e26b0dee82c56be294af447279a3",
+    "infos": [
+      {
+        "ownerOfLost": "0x1100000000000000000000000000000000000000",
+        "covenantAddr": "0x1200000000000000000000000000000000000000",
+        "isRedeemed": false,
+        "redeemTarget": "0x1300000000000000000000000000000000000000",
+        "expectedSignTime": 1665561734,
+        "txid": "0x1400000000000000000000000000000000000000000000000000000000000000",
+        "index": 21,
+        "amount": "0x16",
+        "txSigHash": "0x17"
+      },
+      {
+        "ownerOfLost": "0x2100000000000000000000000000000000000000",
+        "covenantAddr": "0x2200000000000000000000000000000000000000",
+        "isRedeemed": true,
+        "redeemTarget": "0x2300000000000000000000000000000000000000",
+        "expectedSignTime": 1665561734,
+        "txid": "0x2400000000000000000000000000000000000000000000000000000000000000",
+        "index": 37,
+        "amount": "0x26",
+        "txSigHash": "0x27"
+      }
+    ]
+  }
 }`
 	getCcInfoReq  = `{"jsonrpc":"2.0","id":1,"method":"sbch_getCcInfo"}`
 	getCcInfoResp = `{

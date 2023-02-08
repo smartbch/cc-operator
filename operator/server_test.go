@@ -84,7 +84,7 @@ func TestHandleSig(t *testing.T) {
 func TestHandleCurrNodes(t *testing.T) {
 	_currClusterClient := signer.sbchClient.currClusterClient
 	signer.sbchClient.currClusterClient = &sbch.ClusterClient{
-		AllNodes: []sbch.NodeInfo{
+		PublicNodes: []sbch.NodeInfo{
 			{
 				ID:      1234,
 				PbkHash: [32]byte{0xce, 0x12, 0x34},
@@ -102,7 +102,7 @@ func TestHandleCurrNodes(t *testing.T) {
 func TestHandleNewNodes(t *testing.T) {
 	_currClusterClient := signer.sbchClient.currClusterClient
 	signer.sbchClient.currClusterClient = &sbch.ClusterClient{
-		AllNodes: []sbch.NodeInfo{
+		PublicNodes: []sbch.NodeInfo{
 			{
 				ID:      1234,
 				PbkHash: [32]byte{0xce, 0x12, 0x34},
@@ -114,7 +114,7 @@ func TestHandleNewNodes(t *testing.T) {
 	_newClusterClient := signer.sbchClient.newClusterClient
 	signer.sbchClient.nodesChangedTime = time.Unix(1671681687, 0)
 	signer.sbchClient.newClusterClient = &sbch.ClusterClient{
-		AllNodes: []sbch.NodeInfo{
+		PublicNodes: []sbch.NodeInfo{
 			{
 				ID:      2345,
 				PbkHash: [32]byte{0xce, 0x23, 0x45},

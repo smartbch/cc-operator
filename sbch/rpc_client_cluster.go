@@ -17,30 +17,16 @@ import (
 var _ RpcClient = (*ClusterClient)(nil)
 
 type ClusterClient struct {
-	clients  []RpcClient
-	AllNodes []NodeInfo
+	clients     []RpcClient
+	PublicNodes []NodeInfo
 }
 
-func NewClusterRpcClient(nodesGovAddr string, nodeUrls []string,
-	clientReqTimeout time.Duration) (*ClusterClient, error) {
-
-	clients := make([]RpcClient, len(nodeUrls))
-	for i, url := range nodeUrls {
-		client, err := NewSimpleRpcClient(nodesGovAddr, url, clientReqTimeout)
-		if err != nil {
-			return nil, fmt.Errorf("dail %s failed: %w", url, err)
-		}
-		clients[i] = client
-	}
-	return &ClusterClient{clients: clients}, nil
-}
-
-func NewClusterRpcClientOfNodes(nodesGovAddr string, nodes []NodeInfo,
-	privateUrls []string, clientReqTimeout time.Duration) (*ClusterClient, error) {
+func NewClusterRpcClient(nodesGovAddr string, nodes []NodeInfo, privateUrls []string,
+	reqTimeout time.Duration) (*ClusterClient, error) {
 
 	clients := make([]RpcClient, 0, len(nodes))
 	for _, node := range nodes {
-		client, err := NewSimpleRpcClient(nodesGovAddr, node.RpcUrl, clientReqTimeout)
+		client, err := NewSimpleRpcClient(nodesGovAddr, node.RpcUrl, reqTimeout)
 		if err != nil {
 			return nil, fmt.Errorf("dail %s failed: %w", node.RpcUrl, err)
 		}
@@ -54,15 +40,15 @@ func NewClusterRpcClientOfNodes(nodesGovAddr string, nodes []NodeInfo,
 		clients = append(clients, client)
 	}
 	for _, url := range privateUrls {
-		client, err := NewSimpleRpcClient(nodesGovAddr, url, clientReqTimeout)
+		client, err := NewSimpleRpcClient(nodesGovAddr, url, reqTimeout)
 		if err != nil {
 			return nil, fmt.Errorf("dail %s failed: %w", url, err)
 		}
 		clients = append(clients, client)
 	}
 	return &ClusterClient{
-		clients:  clients,
-		AllNodes: nodes,
+		clients:     clients,
+		PublicNodes: nodes,
 	}, nil
 }
 
@@ -71,11 +57,11 @@ func (cluster *ClusterClient) RpcURL() string {
 }
 
 func (cluster *ClusterClient) GetRpcPubkey() ([]byte, error) {
-	panic("not supported")
+	return nil, fmt.Errorf("unsupported operation")
 }
 
 func (cluster *ClusterClient) GetSbchdNodes() ([]NodeInfo, error) {
-	result, err := cluster.GetFromAllNodes("GetSbchdNodes")
+	result, err := cluster.getFromAllNodes("GetSbchdNodes")
 	if err != nil {
 		return nil, err
 	}
@@ -96,28 +82,28 @@ func sortNodes(nodes []NodeInfo) {
 }
 
 func (cluster *ClusterClient) GetRedeemingUtxosForOperators() ([]*sbchrpctypes.UtxoInfo, error) {
-	result, err := cluster.GetFromAllNodes("GetRedeemingUtxosForOperators")
+	result, err := cluster.getFromAllNodes("GetRedeemingUtxosForOperators")
 	if err != nil {
 		return nil, err
 	}
 	return result.([]*sbchrpctypes.UtxoInfo), err
 }
 func (cluster *ClusterClient) GetRedeemingUtxosForMonitors() ([]*sbchrpctypes.UtxoInfo, error) {
-	result, err := cluster.GetFromAllNodes("GetRedeemingUtxosForMonitors")
+	result, err := cluster.getFromAllNodes("GetRedeemingUtxosForMonitors")
 	if err != nil {
 		return nil, err
 	}
 	return result.([]*sbchrpctypes.UtxoInfo), err
 }
 func (cluster *ClusterClient) GetToBeConvertedUtxosForOperators() ([]*sbchrpctypes.UtxoInfo, error) {
-	result, err := cluster.GetFromAllNodes("GetToBeConvertedUtxosForOperators")
+	result, err := cluster.getFromAllNodes("GetToBeConvertedUtxosForOperators")
 	if err != nil {
 		return nil, err
 	}
 	return result.([]*sbchrpctypes.UtxoInfo), err
 }
 func (cluster *ClusterClient) GetToBeConvertedUtxosForMonitors() ([]*sbchrpctypes.UtxoInfo, error) {
-	result, err := cluster.GetFromAllNodes("GetToBeConvertedUtxosForMonitors")
+	result, err := cluster.getFromAllNodes("GetToBeConvertedUtxosForMonitors")
 	if err != nil {
 		return nil, err
 	}
@@ -125,14 +111,14 @@ func (cluster *ClusterClient) GetToBeConvertedUtxosForMonitors() ([]*sbchrpctype
 }
 
 func (cluster *ClusterClient) GetMonitors() ([]gethcmn.Address, error) {
-	result, err := cluster.GetFromAllNodes("GetMonitors")
+	result, err := cluster.getFromAllNodes("GetMonitors")
 	if err != nil {
 		return nil, err
 	}
 	return result.([]gethcmn.Address), err
 }
 
-func (cluster *ClusterClient) GetFromAllNodes(methodName string) (any, error) {
+func (cluster *ClusterClient) getFromAllNodes(methodName string) (any, error) {
 	if len(cluster.clients) == 0 {
 		return nil, fmt.Errorf("no clients")
 	}
@@ -155,8 +141,8 @@ func (cluster *ClusterClient) GetFromAllNodes(methodName string) (any, error) {
 	// fail if one of node return error
 	for idx, err := range errors {
 		if err != nil {
-			return nil, fmt.Errorf("failed to call %s: %s",
-				cluster.clients[idx].RpcURL(), err.Error())
+			return nil, fmt.Errorf("failed to call %s: %w",
+				cluster.clients[idx].RpcURL(), err)
 		}
 	}
 

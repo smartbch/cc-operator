@@ -3,6 +3,7 @@ package operator
 import (
 	"crypto/ecdsa"
 	"encoding/hex"
+	"errors"
 	"os"
 
 	"github.com/edgelesssys/ego/ecrypto"
@@ -14,18 +15,16 @@ import (
 )
 
 func loadOrGenKey(signerKeyWIF string) (privKey *bchec.PrivateKey, pbkBytes []byte, err error) {
-	if sgxMode {
-		if signerKeyWIF != "" && integrationTestMode {
+	if signerKeyWIF != "" {
+		if integrationTestMode {
 			privKey, err = loadKeyFromWIF(signerKeyWIF)
 		} else {
-			privKey, err = loadOrGenKeyInEnclave()
+			err = errors.New("can not load private key from WIF, not in integration-test mode")
 		}
+	} else if sgxMode {
+		privKey, err = loadOrGenKeyInEnclave()
 	} else {
-		if signerKeyWIF != "" {
-			privKey, err = loadKeyFromWIF(signerKeyWIF)
-		} else {
-			privKey, err = loadOrGenKeyNonEnclave()
-		}
+		privKey, err = loadOrGenKeyNonEnclave()
 	}
 
 	if err != nil {

@@ -29,7 +29,9 @@ type SimpleRpcClient struct {
 	sbchRpcClient *sbchrpcclient.Client
 }
 
-func NewSimpleRpcClient(nodesGovAddr, rpcUrl string, reqTimeout time.Duration) (*SimpleRpcClient, error) {
+func NewSimpleRpcClient(nodesGovAddr, rpcUrl string,
+	reqTimeout time.Duration) (*SimpleRpcClient, error) {
+
 	sbchRpcClient, err := sbchrpcclient.DialHTTP(rpcUrl)
 	if err != nil {
 		return nil, err
@@ -60,7 +62,7 @@ func (client *SimpleRpcClient) GetSbchdNodes() ([]NodeInfo, error) {
 		return nil, err
 	}
 
-	// TODO: parallelize
+	// TODO: parallelize ?
 	nodes := make([]NodeInfo, nodeCount)
 	for i := uint64(0); i < nodeCount; i++ {
 		nodes[i], err = client.getNodeByIdx(i, ctx)

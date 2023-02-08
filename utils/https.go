@@ -43,7 +43,10 @@ func GetQueryParam(r *http.Request, name string) string {
 }
 
 func HttpsGet(tlsConfig *tls.Config, url string) ([]byte, error) {
-	client := http.Client{Transport: &http.Transport{TLSClientConfig: tlsConfig}, Timeout: 3 * time.Second}
+	client := http.Client{
+		Transport: &http.Transport{TLSClientConfig: tlsConfig},
+		Timeout:   3 * time.Second,
+	}
 	resp, err := client.Get(url)
 	if err != nil {
 		return nil, err

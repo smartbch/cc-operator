@@ -35,7 +35,7 @@ func newSbchClient(nodesGovAddr string, bootstrapRpcURLs, privateUrls []string) 
 		", bootstrapRpcURLs:", bootstrapRpcURLs, ", privateUrls:", privateUrls)
 
 	// create bootstrapClient and use it to get all nodes
-	bootstrapClient, err := sbch.NewClusterRpcClient(nodesGovAddr, bootstrapRpcURLs, clientReqTimeout)
+	bootstrapClient, err := sbch.NewClusterRpcClient(nodesGovAddr, nil, bootstrapRpcURLs, clientReqTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create bootstrapClient: %w", err)
 	}
@@ -45,7 +45,7 @@ func newSbchClient(nodesGovAddr string, bootstrapRpcURLs, privateUrls []string) 
 	}
 
 	// create clusterClient and check nodes
-	clusterClient, err := sbch.NewClusterRpcClientOfNodes(nodesGovAddr, bootNodes, privateUrls, clientReqTimeout)
+	clusterClient, err := sbch.NewClusterRpcClient(nodesGovAddr, bootNodes, privateUrls, clientReqTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create clusterClient: %w", err)
 	}
@@ -148,9 +148,13 @@ func (client *sbchRpcClient) watchMonitors() {
 	latestMonitors, err := client.currClusterClient.GetMonitors()
 	if err != nil {
 		log.Error("failed to get monitors:", err.Error())
-	} else if !reflect.DeepEqual(latestMonitors, client.currMonitors) {
+		return
+	}
+
+	if !reflect.DeepEqual(latestMonitors, client.currMonitors) {
 		log.Info("monitors changed:", toJSON(latestMonitors))
 		client.rpcClientLock.Lock()
+		defer client.rpcClientLock.Unlock()
 		client.currMonitors = latestMonitors
 		for _, monitor := range latestMonitors {
 			if !client.allMonitorMap[monitor] {
@@ -158,7 +162,6 @@ func (client *sbchRpcClient) watchMonitors() {
 				client.allMonitors = append(client.allMonitors, monitor)
 			}
 		}
-		client.rpcClientLock.Unlock()
 	}
 }
 
@@ -173,7 +176,7 @@ func (client *sbchRpcClient) watchSbchdNodes() {
 	if client.nodesChanged(latestNodes) {
 		log.Info("nodes changed:", toJSON(latestNodes))
 		client.newClusterClient = nil
-		clusterClient, err := sbch.NewClusterRpcClientOfNodes(
+		clusterClient, err := sbch.NewClusterRpcClient(
 			client.nodesGovAddr, latestNodes, client.privateUrls, clientReqTimeout)
 		if err != nil {
 			log.Error("failed to check sbchd nodes:", err.Error())
@@ -191,17 +194,17 @@ func (client *sbchRpcClient) watchSbchdNodes() {
 		if time.Since(client.nodesChangedTime) > newNodesDelayTime {
 			log.Info("switch to new cluster client")
 			client.rpcClientLock.Lock()
+			defer client.rpcClientLock.Unlock()
 			client.currClusterClient = client.newClusterClient
 			client.newClusterClient = nil
-			client.rpcClientLock.Unlock()
 		}
 	}
 }
 func (client *sbchRpcClient) nodesChanged(latestNodes []sbch.NodeInfo) bool {
 	if client.newClusterClient != nil {
-		return !nodesEqual(client.newClusterClient.AllNodes, latestNodes)
+		return !nodesEqual(client.newClusterClient.PublicNodes, latestNodes)
 	}
-	return !nodesEqual(client.currClusterClient.AllNodes, latestNodes)
+	return !nodesEqual(client.currClusterClient.PublicNodes, latestNodes)
 }
 func nodesEqual(s1, s2 []sbch.NodeInfo) bool {
 	return reflect.DeepEqual(s1, s2)
@@ -220,10 +223,10 @@ func (client *sbchRpcClient) fillMonitorsAndNodesInfo(opInfo *OpInfo) {
 
 	opInfo.Monitors = client.allMonitors
 	if client.currClusterClient != nil {
-		opInfo.CurrNodes = client.currClusterClient.AllNodes
+		opInfo.CurrNodes = client.currClusterClient.PublicNodes
 	}
 	if client.newClusterClient != nil {
-		opInfo.NewNodes = client.newClusterClient.AllNodes
+		opInfo.NewNodes = client.newClusterClient.PublicNodes
 		opInfo.NodesChangedTime = client.nodesChangedTime.Unix()
 	}
 }
