@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	"github.com/edgelesssys/ego/attestation"
-	"github.com/edgelesssys/ego/eclient"
 	gethcmn "github.com/ethereum/go-ethereum/common"
 
 	"github.com/smartbch/cc-operator/utils"
@@ -42,7 +41,7 @@ func main() {
 		return
 	}
 
-	report, err := eclient.VerifyRemoteReport(reportBytes)
+	report, err := utils.VerifyRemoteReport(reportBytes)
 	if err != nil {
 		println("failed to verify remote report: ", err.Error())
 		return

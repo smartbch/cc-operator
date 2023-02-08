@@ -4,7 +4,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
@@ -68,7 +68,7 @@ func TestHandleSig(t *testing.T) {
 	}
 
 	require.NoError(t, signer.sigCache.Set("1234", []byte{0x56, 0x78}))
-	signer.timeCache.Set("1234", utils.GetTimestampFromTSC()-10)
+	_ = signer.timeCache.Set("1234", utils.GetTimestampFromTSC()-10)
 
 	for _, path := range []string{"/sig?hash=0x4321", "/sig?hash=4321"} {
 		require.Equal(t, `{"success":false,"error":"no signature found:Key not found."}`,
@@ -200,7 +200,7 @@ func callHandler(path string) (string, error) {
 
 	res := w.Result()
 	defer res.Body.Close()
-	data, err := ioutil.ReadAll(res.Body)
+	data, err := io.ReadAll(res.Body)
 	return string(data), err
 }
 

@@ -3,5 +3,5 @@ package operator
 import "testing"
 
 func TestNewPrivKey(t *testing.T) {
-	genNewPrivKey()
+	_, _ = genNewPrivKey()
 }

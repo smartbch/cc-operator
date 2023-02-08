@@ -3,7 +3,6 @@ package operator
 import (
 	"crypto/ecdsa"
 	"encoding/hex"
-	"io/ioutil"
 	"os"
 
 	"github.com/edgelesssys/ego/ecrypto"
@@ -59,7 +58,7 @@ func loadOrGenKeyNonEnclave() (*bchec.PrivateKey, error) {
 	if os.IsNotExist(err) {
 		privKey, err := genNewPrivKey()
 		if err == nil {
-			err = ioutil.WriteFile(keyFile, privKey.Serialize(), 0600)
+			err = os.WriteFile(keyFile, privKey.Serialize(), 0600)
 		}
 		return privKey, err
 	}

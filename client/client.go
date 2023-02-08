@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -32,9 +32,7 @@ type Client struct {
 }
 
 func NewClient(rpcUrl string, reqTimeout time.Duration) *Client {
-	if strings.HasSuffix(rpcUrl, "/") {
-		rpcUrl = rpcUrl[:len(rpcUrl)-1]
-	}
+	rpcUrl = strings.TrimSuffix(rpcUrl, "/")
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -139,7 +137,7 @@ func (client *Client) httpGet(ctx context.Context, pathAndQuery string, result a
 	}
 
 	defer resp.Body.Close()
-	respData, err := ioutil.ReadAll(resp.Body)
+	respData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}

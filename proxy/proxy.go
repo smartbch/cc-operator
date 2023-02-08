@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/edgelesssys/ego/attestation"
-	"github.com/edgelesssys/ego/eclient"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/smartbch/cc-operator/utils"
@@ -50,7 +49,7 @@ func StartProxyServerWithName(operatorUrl, operatorName string, signer, uniqueID
 		Handler:      proxy,
 		ReadTimeout:  3 * time.Second,
 		WriteTimeout: 5 * time.Second,
-		TLSConfig:    &tlsCfg,
+		TLSConfig:    tlsCfg,
 	}
 	log.Info("cc-operator proxy listening at:", listenAddr, "...")
 	err := server.ListenAndServeTLS("", "")
@@ -121,7 +120,7 @@ func verifyOperator(operatorUrl string, signer, uniqueID []byte) ([]byte, error)
 }
 
 func verifyReport(reportBytes, certBytes, signer, uniqueID []byte) error {
-	report, err := eclient.VerifyRemoteReport(reportBytes)
+	report, err := utils.VerifyRemoteReport(reportBytes)
 	if err != nil {
 		return err
 	}

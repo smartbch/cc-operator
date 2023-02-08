@@ -10,4 +10,3 @@ func GetTimestampFromTSC() uint64 {
 	cycleNumber := uint64(C.get_tsc())
 	return cycleNumber / intelCPUFreq
 }
-

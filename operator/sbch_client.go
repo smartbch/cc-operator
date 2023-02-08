@@ -188,7 +188,7 @@ func (client *sbchRpcClient) watchSbchdNodes() {
 	}
 
 	if client.newClusterClient != nil {
-		if time.Now().Sub(client.nodesChangedTime) > newNodesDelayTime {
+		if time.Since(client.nodesChangedTime) > newNodesDelayTime {
 			log.Info("switch to new cluster client")
 			client.rpcClientLock.Lock()
 			client.currClusterClient = client.newClusterClient

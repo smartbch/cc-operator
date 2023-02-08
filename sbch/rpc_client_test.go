@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -33,7 +33,6 @@ const (
 
 	getRedeemingUtxosReq     = `{"jsonrpc":"2.0","id":1,"method":"sbch_getRedeemingUtxosForOperators"}`
 	getToBeConvertedUtxosReq = `{"jsonrpc":"2.0","id":1,"method":"sbch_getToBeConvertedUtxosForOperators"}`
-	getUtxosResp0            = `{"jsonrpc":"2.0","id":1,"result":null}`
 	getUtxosResp             = `{
   "jsonrpc": "2.0",
   "id": 1,
@@ -168,18 +167,18 @@ const (
 var testKey, _ = crypto.HexToECDSA("14542dfb851d5a19b0b8f4951d3e392819c87d83bd75bbedaeb99b4d34086aad")
 
 func fakeServerHandler(w http.ResponseWriter, r *http.Request) {
-	req, err := ioutil.ReadAll(r.Body)
+	req, err := io.ReadAll(r.Body)
 	if err != nil {
-		w.Write([]byte(err.Error()))
+		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
 
 	resp, err := fakeServerLogic(string(req))
 	if err != nil {
-		w.Write([]byte(err.Error()))
+		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
-	w.Write(resp)
+	_, _ = w.Write(resp)
 }
 
 func fakeServerLogic(reqStr string) ([]byte, error) {

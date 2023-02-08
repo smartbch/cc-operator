@@ -8,13 +8,13 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/big"
 	"net/http"
 	"time"
 )
 
-func CreateCertificate(serverName string) ([]byte, crypto.PrivateKey, tls.Config) {
+func CreateCertificate(serverName string) ([]byte, crypto.PrivateKey, *tls.Config) {
 	template := &x509.Certificate{
 		SerialNumber: &big.Int{},
 		Subject:      pkix.Name{CommonName: serverName},
@@ -23,7 +23,7 @@ func CreateCertificate(serverName string) ([]byte, crypto.PrivateKey, tls.Config
 	}
 	priv, _ := rsa.GenerateKey(rand.Reader, 2048)
 	cert, _ := x509.CreateCertificate(rand.Reader, template, template, &priv.PublicKey, priv)
-	tlsCfg := tls.Config{
+	tlsCfg := &tls.Config{
 		Certificates: []tls.Certificate{
 			{
 				Certificate: [][]byte{cert},
@@ -52,5 +52,5 @@ func HttpsGet(tlsConfig *tls.Config, url string) ([]byte, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("http status: %s", resp.Status)
 	}
-	return ioutil.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
 }

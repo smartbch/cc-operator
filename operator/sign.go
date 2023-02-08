@@ -107,9 +107,7 @@ func (signer *txSigner) cacheSigHashes4Mo(redeemingSigHashes4Mo, toBeConvertedSi
 }
 
 func (signer *txSigner) getSig(sigHashHex string) ([]byte, error) {
-	if strings.HasPrefix(sigHashHex, "0x") {
-		sigHashHex = sigHashHex[2:]
-	}
+	sigHashHex = strings.TrimPrefix(sigHashHex, "0x")
 
 	val, err := signer.sigCache.Get(sigHashHex)
 	if err != nil {

@@ -72,7 +72,7 @@ func startHttpsServer(serverName, listenAddr string) {
 		Handler:      mux,
 		ReadTimeout:  3 * time.Second,
 		WriteTimeout: 5 * time.Second,
-		TLSConfig:    &tlsCfg,
+		TLSConfig:    tlsCfg,
 	}
 	log.Info("listening at:", listenAddr, "...")
 	err := server.ListenAndServeTLS("", "")
@@ -100,7 +100,7 @@ func createHttpHandlers() *http.ServeMux {
 
 func handleCert(w http.ResponseWriter, r *http.Request) {
 	if utils.GetQueryParam(r, "raw") != "" {
-		w.Write(certBytes)
+		_, _ = w.Write(certBytes)
 		return
 	}
 	NewOkResp("0x" + hex.EncodeToString(certBytes)).WriteTo(w)
@@ -120,7 +120,7 @@ func handleCertReport(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if utils.GetQueryParam(r, "raw") != "" {
-		w.Write(report)
+		_, _ = w.Write(report)
 		return
 	}
 	NewOkResp("0x" + hex.EncodeToString(report)).WriteTo(w)
@@ -128,7 +128,7 @@ func handleCertReport(w http.ResponseWriter, r *http.Request) {
 
 func handlePubKey(w http.ResponseWriter, r *http.Request) {
 	if utils.GetQueryParam(r, "raw") != "" {
-		w.Write(pubKeyBytes)
+		_, _ = w.Write(pubKeyBytes)
 		return
 	}
 	NewOkResp("0x" + hex.EncodeToString(pubKeyBytes)).WriteTo(w)
@@ -148,7 +148,7 @@ func handlePubkeyReport(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if utils.GetQueryParam(r, "raw") != "" {
-		w.Write(report)
+		_, _ = w.Write(report)
 		return
 	}
 	NewOkResp("0x" + hex.EncodeToString(report)).WriteTo(w)
